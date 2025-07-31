@@ -1,0 +1,24 @@
+[gd_scene load_steps=6 format=3 uid="uid://cer2ix1q6mbgf"]
+
+[ext_resource type="PackedScene" path="res://scenes/ground.tscn" id="2_ground"]
+[ext_resource type="PackedScene" path="res://scenes/planet_launcher.tscn" id="3_planet_launcher"]
+[ext_resource type="PackedScene" path="res://scenes/player_spaceship.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/launchpad.tscn" id="5_launchpad"]
+[ext_resource type="PackedScene" path="res://scenes/asteroid_spawner.tscn" id="6_asteroids"]
+
+[node name="Game" type="Node2D"]
+
+[node name="Ground" parent="." instance=ExtResource("2_ground")]
+position = Vector2(556, 1457)
+gravity_strength = 200.0
+
+[node name="PlanetLauncher" parent="." instance=ExtResource("3_planet_launcher")]
+gravity_influence_distance = 300.0
+planet_gravity_strength = 200.0
+
+[node name="PlayerSpaceship" parent="." instance=ExtResource("4_player")]
+
+[node name="Launchpad" parent="." instance=ExtResource("5_launchpad")]
+position = Vector2(600, 1421)
+
+[node name="AsteroidSpawner" parent="." instance=ExtResource("6_asteroids")]

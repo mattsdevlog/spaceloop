@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://b621fncx1e2fm"]
+
+[ext_resource type="Script" uid="uid://7typeyf14y3k" path="res://launcher.gd" id="1_ut831"]
+[ext_resource type="Script" uid="uid://cp4vbv2c7ahf6" path="res://scenes/tube.gd" id="2_m736f"]
+
+[node name="Launcher" type="Node2D"]
+script = ExtResource("1_ut831")
+
+[node name="Tube" type="Node2D" parent="."]
+position = Vector2(0, -30)
+script = ExtResource("2_m736f")
