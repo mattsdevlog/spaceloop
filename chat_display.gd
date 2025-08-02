@@ -40,22 +40,13 @@ func _draw():
 		return
 		
 	var font = ThemeDB.fallback_font
-	var font_size = 16
+	var font_size = 32
 	
 	# Calculate total width for centering
 	var total_width = 0.0
 	for i in range(chat_message.length()):
 		var char = chat_message[i]
 		total_width += font.get_string_size(char, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	
-	# Draw background for better readability
-	var padding = 8
-	var text_height = font.get_height(font_size)
-	var bg_rect = Rect2(-total_width/2 - padding, 
-						-text_height/2 - padding, 
-						total_width + padding * 2, 
-						text_height + padding * 2)
-	draw_rect(bg_rect, Color(0, 0, 0, 0.7))
 	
 	# Draw each character with shake effect
 	var current_x = -total_width/2
@@ -67,14 +58,13 @@ func _draw():
 		var char = chat_message[i]
 		var char_width = font.get_string_size(char, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		
-		# Add shake effect - each character shakes independently
+		# Add vertical shake effect - each character shakes independently
 		var shake_amount = 1.0
 		var time_offset = i * 0.3  # Different phase for each character
-		var shake_x = sin(Time.get_ticks_msec() / 50.0 + time_offset) * shake_amount
-		var shake_y = cos(Time.get_ticks_msec() / 40.0 + time_offset) * shake_amount
+		var shake_y = sin(Time.get_ticks_msec() / 40.0 + time_offset) * shake_amount
 		
-		# Character position with shake
-		var char_pos = Vector2(current_x + shake_x, shake_y)
+		# Character position with vertical shake only
+		var char_pos = Vector2(current_x, shake_y)
 		
 		# Draw the character
 		var text_color = Color(1, 1, 1, alpha)

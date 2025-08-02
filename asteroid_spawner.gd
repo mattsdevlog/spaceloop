@@ -19,6 +19,17 @@ func _ready() -> void:
 	# Set initial spawn interval
 	spawn_interval = randf_range(min_spawn_interval, max_spawn_interval)
 
+func clear_asteroids() -> void:
+	# Remove all asteroids
+	var asteroids = get_tree().get_nodes_in_group("asteroids")
+	for asteroid in asteroids:
+		if is_instance_valid(asteroid):
+			asteroid.queue_free()
+	
+	# Reset spawn timer
+	spawn_timer = 0.0
+	spawn_interval = randf_range(min_spawn_interval, max_spawn_interval)
+
 func _process(delta: float) -> void:
 	spawn_timer += delta
 	

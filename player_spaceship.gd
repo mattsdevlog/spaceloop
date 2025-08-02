@@ -94,20 +94,19 @@ var settle_threshold: float = 0.5  # Must be settled for this long before shake 
 var max_settle_velocity: float = 10.0  # Max velocity to be considered "settled"
 
 # UI Labels
-var name_label: Label = null
+var name_display: Node2D = null
 var chat_display: Node2D = null
 
 func _ready() -> void:
 	# Set z_index so spaceship appears above smoke
 	z_index = 1
 	
-	# Create name label
-	name_label = Label.new()
-	name_label.add_theme_font_size_override("font_size", 20)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.position = Vector2(0, -65)
-	name_label.z_index = 10
-	add_child(name_label)
+	# Create name display
+	var name_display_scene = load("res://name_display.gd")
+	name_display = Node2D.new()
+	name_display.set_script(name_display_scene)
+	name_display.position = Vector2(0, -85)
+	add_child(name_display)
 	
 	# Create chat display
 	var ChatDisplay = preload("res://chat_display.gd")
@@ -174,17 +173,15 @@ func _process(delta: float) -> void:
 		update_shatter(delta)
 	
 	# Keep labels upright and positioned above ship in global space
-	if name_label:
-		name_label.rotation = -rotation
-		name_label.text = player_name
-		name_label.visible = not is_shattered and player_name != ""
+	if name_display:
+		name_display.rotation = -rotation
+		name_display.visible = not is_shattered and player_name != ""
+		if name_display.has_method("set_player_name"):
+			name_display.set_player_name(player_name)
 		
-		# Position label above ship in global space
-		if player_name != "":
-			# Calculate global "up" position regardless of ship rotation
-			var global_offset = Vector2(0, -85)
-			name_label.position = global_offset.rotated(-rotation)
-			name_label.position.x -= name_label.size.x / 2  # Center horizontally
+		# Position name display above ship in global space
+		var global_offset = Vector2(0, -85)
+		name_display.position = global_offset.rotated(-rotation)
 	
 	if chat_display:
 		chat_display.rotation = -rotation
@@ -204,9 +201,16 @@ func handle_input(delta: float) -> void:
 	
 	if is_multiplayer_authority() or not get_multiplayer().has_multiplayer_peer():
 		# Local player or single player - use actual input
-		input_left = Input.is_action_pressed("ui_left")
-		input_right = Input.is_action_pressed("ui_right")
-		input_up = Input.is_action_pressed("ui_up")
+		# Check if menu is visible to disable controls
+		var menu_node = get_node_or_null("/root/Game/MainMenu")
+		if menu_node and menu_node.visible:
+			input_left = false
+			input_right = false
+			input_up = false
+		else:
+			input_left = Input.is_action_pressed("ui_left")
+			input_right = Input.is_action_pressed("ui_right")
+			input_up = Input.is_action_pressed("ui_up")
 	else:
 		# Remote player - use synced inputs
 		input_left = remote_input_left

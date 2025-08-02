@@ -42,6 +42,9 @@ var winner_id: int = -1
 @onready var worth_label = $UI/WorthLabel
 @onready var white_fade = $UI/WhiteFade
 @onready var camera = $Camera2D
+@onready var exit_confirm_panel = $UI/ExitConfirmPanel
+@onready var yes_button = $UI/ExitConfirmPanel/YesButton
+@onready var no_button = $UI/ExitConfirmPanel/NoButton
 
 # Game objects
 var server_asteroids = {}  # Dictionary of asteroid_id -> asteroid node
@@ -89,6 +92,17 @@ func _ready():
 	# Store camera start position
 	if camera:
 		camera_start_y = camera.position.y
+	
+	# Connect exit confirmation buttons
+	if yes_button:
+		yes_button.pressed.connect(_on_exit_yes_pressed)
+	if no_button:
+		no_button.pressed.connect(_on_exit_no_pressed)
+	
+	# Connect chat input text changed to force uppercase
+	if chat_input:
+		chat_input.text_changed.connect(_on_chat_text_changed)
+	
 
 func _on_connected_to_server():
 	#print("Connected to server! My ID: ", my_peer_id)
@@ -110,6 +124,10 @@ func _return_to_menu():
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 func _process(delta: float):
+	# Keep chat input focused unless exit panel is shown
+	if chat_input and chat_input.visible and not chat_input.has_focus() and not exit_confirm_panel.visible:
+		chat_input.grab_focus()
+	
 	if is_ascending:
 		# Fade out score
 		if score_fade_timer < 1.0:
@@ -258,6 +276,8 @@ func joined_game(server_game_id: String, color_index: int, player_list: Array):
 	
 	# Show chat input immediately when joining
 	chat_input.visible = true
+	# Give initial focus to chat input
+	chat_input.call_deferred("grab_focus")
 
 @rpc("authority", "reliable")
 func player_joined(peer_id: int, color_index: int, player_name: String = "Player"):
@@ -571,23 +591,30 @@ func _update_score_display():
 			start_ascension()
 
 func _input(event):
-	# Allow chat even before game starts
 	if event is InputEventKey and event.pressed:
+		# Handle Enter for chat
 		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
-			if chat_input.has_focus():
-				# Send the message if not empty
-				var message = chat_input.text.strip_edges()
+			if chat_input and chat_input.has_focus():
+				var message = chat_input.text.strip_edges().to_upper()
 				if message.length() > 0:
 					# Filter the message before sending
 					var filtered_message = ProfanityFilter.filter_text(message)
 					# Send to server
 					rpc_id(1, "send_chat_message", my_peer_id, filtered_message)
 					chat_input.text = ""
-				# Release focus
-				chat_input.release_focus()
-			else:
-				# Give focus to chat input
-				chat_input.grab_focus()
+				# Accept the event to prevent default behavior
+				get_viewport().set_input_as_handled()
+		# Handle ESC for exit confirmation
+		elif event.keycode == KEY_ESCAPE:
+			# Toggle exit confirmation panel
+			if exit_confirm_panel:
+				if exit_confirm_panel.visible:
+					_on_exit_no_pressed()
+				else:
+					exit_confirm_panel.visible = true
+					yes_button.grab_focus()
+					# Disable chat input focus while popup is shown
+					chat_input.release_focus()
 
 # RPC to server
 @rpc("any_peer", "reliable")
@@ -641,3 +668,23 @@ func player_health_updated(player_id: int, health: float):
 		var player = players[player_id]
 		if is_instance_valid(player):
 			player.set_health(health)
+
+func _on_exit_yes_pressed():
+	# Disconnect from server and return to menu
+	if get_multiplayer().has_multiplayer_peer():
+		get_multiplayer().multiplayer_peer.close()
+	_return_to_menu()
+
+func _on_exit_no_pressed():
+	# Hide confirmation panel and refocus chat
+	if exit_confirm_panel:
+		exit_confirm_panel.visible = false
+	if chat_input and chat_input.visible:
+		chat_input.grab_focus()
+
+func _on_chat_text_changed(new_text: String):
+	# Force uppercase
+	var upper_text = new_text.to_upper()
+	if upper_text != new_text:
+		chat_input.text = upper_text
+		chat_input.caret_column = upper_text.length()

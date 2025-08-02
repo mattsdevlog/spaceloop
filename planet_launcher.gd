@@ -27,6 +27,16 @@ func _ready() -> void:
 	# Set initial spawn time
 	next_spawn_time = randf_range(min_spawn_time, max_spawn_time)
 
+func clear_planets() -> void:
+	# Remove current planet if it exists
+	if current_planet and is_instance_valid(current_planet):
+		current_planet.queue_free()
+		current_planet = null
+	
+	# Reset spawn timer
+	spawn_timer = 0.0
+	next_spawn_time = randf_range(min_spawn_time, max_spawn_time)
+
 func _process(delta: float) -> void:
 	# Only spawn a new planet if there isn't one already
 	if current_planet == null or not is_instance_valid(current_planet):
