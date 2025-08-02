@@ -94,9 +94,11 @@ func _draw() -> void:
 	# Draw the asteroid polygon
 	if polygon_points.size() > 2:
 		var color = asteroid_color
-		draw_polygon(polygon_points, PackedColorArray([color]))
 		
-		# Draw outline for better visibility
+		# Don't draw filled polygon - outline only
+		# draw_polygon(polygon_points, PackedColorArray([color]))
+		
+		# Always draw outline
 		for i in range(polygon_points.size()):
 			var next = (i + 1) % polygon_points.size()
 			draw_line(polygon_points[i], polygon_points[next], color, 2.0)

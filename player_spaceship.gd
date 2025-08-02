@@ -26,10 +26,11 @@ var remote_input_up: bool = false
 var max_fuel: float = 300.0
 var current_fuel: float = 300.0
 var fuel_consumption_rate: float = 20.0  # Fuel per second when thrusting
-var fuel_recharge_rate: float = 50.0  # Fuel per second when landed
+var fuel_recharge_rate: float = 100.0  # Fuel per second when landed
 
 # Visual properties
-var ship_color: Color = Color.CYAN
+var ship_color: Color = Color.WHITE
+var assigned_color_index: int = -1  # Store the assigned color index for respawning
 
 # Dual rocket mode variables
 var left_rocket_firing: bool = false
@@ -71,6 +72,7 @@ var tracked_planet = null  # The planet we're tracking progress on (persists whe
 var is_ascension_mode: bool = false  # Unlimited fuel during ascension
 var battle_mode: bool = false  # Shooting enabled
 var can_shoot: bool = true
+var just_scored: bool = false  # Prevent immediate reactivation after scoring
 var shoot_cooldown: float = 0.5
 var shoot_timer: float = 0.0
 # Health removed - using fuel directly in battle mode
@@ -162,7 +164,7 @@ func _process(delta: float) -> void:
 		check_spaceship_collisions()
 		
 		# Handle shooting in battle mode
-		if battle_mode and is_multiplayer_authority():
+		if battle_mode and (is_multiplayer_authority() or not get_multiplayer().has_multiplayer_peer()):
 			handle_shooting()
 		
 		# Handle smoke effects for remote players
@@ -407,6 +409,7 @@ func update_physics(delta: float) -> void:
 			close_to_pad = distance_to_pad < 100 and y_distance < 20
 	
 	if on_launchpad or (close_to_pad and is_on_ground):
+		#print("[UPDATE_PHYSICS] On/near launchpad - on_launchpad=", on_launchpad, " close_to_pad=", close_to_pad)
 		# Check if player is not pressing burst key
 		# Need to check if thrusting based on authority
 		var is_thrusting = false
@@ -424,8 +427,17 @@ func update_physics(delta: float) -> void:
 				shake_offset = Vector2.ZERO
 		else:
 			time_settled_on_pad = 0.0
+			# Only reset launchpad if we just scored and are now leaving
+			if just_scored:
+				#print("[UPDATE_PHYSICS] Leaving pad after scoring - resetting launchpad")
+				just_scored = false  # Reset flag when leaving pad
+				var launchpad = get_node_or_null("/root/Game/Launchpad")
+				if launchpad and launchpad.has_method("reset_for_next_orbit"):
+					launchpad.reset_for_next_orbit()
 	else:
 		time_settled_on_pad = 0.0
+		just_scored = false  # Reset flag when not on pad
+		# Don't reset launchpad here - only when leaving the pad after being on it
 	
 	# Check ground collision if not on launchpad
 	if not on_launchpad:
@@ -438,7 +450,8 @@ func update_physics(delta: float) -> void:
 			
 			# Debug output
 			if global_position.y > 1400:  # Only print when near ground
-				print("Ship Y: ", global_position.y, " Ground Y: ", ground_y)
+				#print("Ship Y: ", global_position.y, " Ground Y: ", ground_y)
+				pass
 			
 			# Check if ANY part of the ship hits the ground
 			# Get all key points of the ship in world space
@@ -466,7 +479,7 @@ func update_physics(delta: float) -> void:
 				var world_point = ship_transform * point
 				if world_point.y >= ground_y:
 					touching_ground = true
-					print("Ground collision at point ", point, "! World Y: ", world_point.y, " Ground Y: ", ground_y)
+					#print("Ground collision at point ", point, "! World Y: ", world_point.y, " Ground Y: ", ground_y)
 					break
 			
 			if touching_ground:
@@ -681,15 +694,8 @@ func _draw() -> void:
 		draw_set_transform(current_shake_offset, 0.0, Vector2.ONE)
 	
 	if not is_shattered:
-		# Choose color based on gravity state
-		var current_color = ship_color
-		if is_near_planet:
-			if orbiting_planet:
-				# Show orbit progress with color gradient
-				var orbit_progress = abs(orbit_total_angle) / (TAU * 0.75)
-				current_color = Color.CYAN.lerp(Color.YELLOW, orbit_progress)
-			else:
-				current_color = Color.GREEN
+		# Always use white color
+		var current_color = Color.WHITE
 		
 		# Draw ship body (rectangle) as fuel gauge with square bottom
 		var body_size = Vector2(20, 60)  # Doubled height from 30 to 60
@@ -704,12 +710,8 @@ func _draw() -> void:
 		var fuel_pos = Vector2(body_pos.x, body_pos.y + body_size.y - fuel_height)
 		var fuel_size = Vector2(body_size.x, fuel_height)
 		
-		# Choose fuel color based on level
-		var fuel_color = current_color
-		if fuel_percentage < 0.25:
-			fuel_color = Color.RED  # Low fuel warning
-		elif fuel_percentage < 0.5:
-			fuel_color = Color.ORANGE  # Medium fuel
+		# Always use white for fuel
+		var fuel_color = Color.WHITE
 		
 		draw_rect(Rect2(fuel_pos, fuel_size), fuel_color)
 		
@@ -761,7 +763,7 @@ func _draw() -> void:
 					Vector2(-15, 42),
 					Vector2(-9, 42)
 				])
-				draw_polygon(left_flame_points, PackedColorArray([Color.ORANGE]))
+				draw_polygon(left_flame_points, PackedColorArray([Color.WHITE]))
 			
 			if right_rocket_firing and current_fuel > 0:
 				var right_flame_points = PackedVector2Array([
@@ -769,7 +771,7 @@ func _draw() -> void:
 					Vector2(9, 42),
 					Vector2(15, 42)
 				])
-				draw_polygon(right_flame_points, PackedColorArray([Color.ORANGE]))
+				draw_polygon(right_flame_points, PackedColorArray([Color.WHITE]))
 		
 		# Draw thrust indicator when thrusting (and have fuel) - only in single rocket mode
 		var should_show_thrust = false
@@ -786,17 +788,17 @@ func _draw() -> void:
 				Vector2(0, 40),       # Bottom tip (doubled)
 				Vector2(5, 30)        # Right (doubled)
 			])
-			draw_polygon(thrust_points, PackedColorArray([Color.ORANGE]))
+			draw_polygon(thrust_points, PackedColorArray([Color.WHITE]))
 			
 			# Debug: Draw spawn point for smoke
 			var spawn_offset = Vector2(0, 35)  # Adjusted for taller ship
-			draw_circle(spawn_offset, 3, Color.RED)
+			draw_circle(spawn_offset, 3, Color.WHITE)
 		
 		# Debug: Draw bottom corners
 		var debug_bottom_left = Vector2(-10, 30)  # Doubled
 		var debug_bottom_right = Vector2(10, 30)  # Doubled
-		draw_circle(debug_bottom_left, 2, Color.GREEN)
-		draw_circle(debug_bottom_right, 2, Color.GREEN)
+		draw_circle(debug_bottom_left, 2, Color.WHITE)
+		draw_circle(debug_bottom_right, 2, Color.WHITE)
 		
 		# Removed "Return to pad!" text - launchpad now blinks instead
 	else:
@@ -829,12 +831,8 @@ func _draw() -> void:
 					# Fuel fills from bottom up: starts at y=15, goes up by fuel_height
 					var fuel_rect = Rect2(-10, 15 - fuel_height, 20, fuel_height)
 					
-					# Choose fuel color based on level
-					var fuel_color = color
-					if piece.fuel_percentage < 0.25:
-						fuel_color = Color.RED
-					elif piece.fuel_percentage < 0.5:
-						fuel_color = Color.ORANGE
+					# Always use white for fuel
+					var fuel_color = Color.WHITE
 					fuel_color.a = piece.alpha
 					
 					draw_rect(fuel_rect, fuel_color, true)
@@ -867,12 +865,8 @@ func _draw() -> void:
 					# Fuel fills from bottom up: starts at y=15, goes up by fuel_height
 					var fuel_rect = Rect2(-10, 15 - fuel_height, 20, fuel_height)
 					
-					# Choose fuel color based on level
-					var fuel_color = color
-					if piece.fuel_percentage < 0.25:
-						fuel_color = Color.RED
-					elif piece.fuel_percentage < 0.5:
-						fuel_color = Color.ORANGE
+					# Always use white for fuel
+					var fuel_color = Color.WHITE
 					fuel_color.a = piece.alpha
 					
 					draw_rect(fuel_rect, fuel_color, true)
@@ -908,6 +902,11 @@ func _draw() -> void:
 	
 
 func update_orbit_tracking(planet, delta: float) -> void:
+	# Don't track orbits while on ground
+	if is_on_ground:
+		#print("[ORBIT] Not tracking - on ground")
+		return
+		
 	var to_spaceship = global_position - planet.global_position
 	var current_angle = to_spaceship.angle()
 	
@@ -952,7 +951,10 @@ func update_orbit_tracking(planet, delta: float) -> void:
 		planet.update_orbit_progress(progress, direction)
 		
 		# Check for complete orbit (270 degrees is enough)
-		if abs(orbit_total_angle) >= TAU * 0.75 and not has_completed_orbit:
+		# Don't complete orbit if we're on the ground or already have pending score
+		#print("[ORBIT] Progress: ", abs(orbit_total_angle) / TAU, " has_completed=", has_completed_orbit, " on_ground=", is_on_ground, " pending=", pending_score)
+		if abs(orbit_total_angle) >= TAU * 0.75 and not has_completed_orbit and not is_on_ground and not pending_score:
+			#print("[ORBIT] ORBIT COMPLETED!")
 			has_completed_orbit = true
 			planet.complete_orbit()  # Trigger the fill-in animation
 			on_orbit_completed()
@@ -976,7 +978,11 @@ func on_orbit_completed() -> void:
 	# Activate launchpad visual
 	var launchpad = get_node_or_null("/root/Game/Launchpad")
 	if launchpad:
-		launchpad.activate()
+		var on_pad = launchpad.is_spaceship_on_pad(global_position)
+		# Only activate if player is not already on the pad
+		if not on_pad:
+			# Launchpad activated for scoring
+			launchpad.activate()
 	else:
 		# In multiplayer, notify server to activate the player's launchpad
 		var multiplayer_client = get_node_or_null("/root/MultiplayerGame")
@@ -1103,7 +1109,7 @@ func shatter(impact_point: Vector2 = Vector2.ZERO) -> void:
 	if max_fuel > 0:
 		fuel_percent = current_fuel / max_fuel
 	
-	print("Shattering with fuel: ", current_fuel, "/", max_fuel, " = ", fuel_percent)
+	#print("Shattering with fuel: ", current_fuel, "/", max_fuel, " = ", fuel_percent)
 	
 	# Create two main halves at their actual positions
 	# Top half (nose and upper body) - positioned at the top section of the ship
@@ -1225,15 +1231,17 @@ func respawn() -> void:
 			Vector2(900, 1221 - 40)    # Right launchpad
 		]
 		
-		# Find player's color index by checking ship color
-		var color_index = 0
-		if ship_color == Color.YELLOW:
-			color_index = 0
-		elif ship_color == Color.LIGHT_BLUE:
-			color_index = 1
-		else:  # Red
-			color_index = 2
-			
+		# Use the assigned color index for respawn position
+		var color_index = assigned_color_index
+		if color_index < 0 or color_index > 2:
+			# Fallback: determine from ship color if not set
+			if ship_color == Color.YELLOW:
+				color_index = 0
+			elif ship_color == Color.LIGHT_BLUE:
+				color_index = 1
+			else:  # Red
+				color_index = 2
+		
 		position = launchpad_positions[color_index]
 		rotation = 0
 	else:
@@ -1253,8 +1261,10 @@ func respawn() -> void:
 	
 	# Deactivate launchpad if we had a pending score (check before resetting)
 	var had_pending_score = pending_score
+	print("had pending score")
 	if had_pending_score:
 		if is_multiplayer:
+			print("is multiplayer")
 			# In multiplayer, notify server to deactivate
 			var multiplayer_client = get_node_or_null("/root/MultiplayerGame")
 			if multiplayer_client and is_multiplayer_authority():
@@ -1264,6 +1274,7 @@ func respawn() -> void:
 			# Single player
 			var launchpad = get_node_or_null("/root/Game/Launchpad")
 			if launchpad:
+				print("launcpad deactivate")
 				launchpad.deactivate()
 	
 	# Reset other properties
@@ -1287,6 +1298,9 @@ func respawn() -> void:
 
 
 func check_launchpad() -> void:
+	# Debug: Print pending score status
+	#print("[CHECK_LAUNCHPAD] pending_score = ", pending_score)
+	
 	if not pending_score:
 		return
 	
@@ -1312,14 +1326,24 @@ func check_launchpad() -> void:
 				launchpad_found = pad
 				break
 	
-	if on_pad and is_on_ground and launchpad_found:
+	if on_pad and launchpad_found:
+		print("on pad and launchpad found")
 		# Score the point
 		score += 1
 		pending_score = false
-		print("Score! Total: ", score)
 		
-		# Handle launchpad deactivation
-		var is_multiplayer_game = get_multiplayer().has_multiplayer_peer()
+		# Immediately deactivate in single player before any other logic
+		# Check if we're in single player mode by looking for Game node
+		var is_single_player = get_node_or_null("/root/Game") != null
+		if is_single_player:
+			print("single player mode - deactivating launchpad")
+			if launchpad_found.has_method("deactivate"):
+				print("launchpad deact after score")
+				launchpad_found.deactivate()
+			just_scored = true  # Set flag to prevent immediate reactivation
+		
+		# Handle launchpad deactivation for multiplayer
+		var is_multiplayer_game = get_node_or_null("/root/MultiplayerGame") != null
 		if is_multiplayer_game:
 			# In multiplayer, notify server to deactivate for all clients
 			var multiplayer_client = get_node_or_null("/root/MultiplayerGame")
@@ -1331,25 +1355,27 @@ func check_launchpad() -> void:
 					# Find planet ID by checking server_planets
 					for planet_id in multiplayer_client.server_planets:
 						if multiplayer_client.server_planets[planet_id] == completed_planet:
-							print("Notifying server about planet completion: ", planet_id)
+							#print("Notifying server about planet completion: ", planet_id)
 							multiplayer_client.rpc_id(1, "planet_completed", planet_id)
 							# Also notify about score for countdown
 							multiplayer_client.rpc_id(1, "player_scored", multiplayer_client.my_peer_id, planet_id)
 							break
-		else:
-			# Single player - deactivate directly
-			launchpad_found.deactivate()
 		
 		# Mark the planet as orbited so it fades out
 		if completed_planet and is_instance_valid(completed_planet):
-			print("Marking planet as orbited")
+			#print("Marking planet as orbited")
 			completed_planet.mark_as_orbited()
 			completed_planet = null
 		else:
-			print("No valid completed_planet to mark as orbited")
+			#print("No valid completed_planet to mark as orbited")
+			pass
 		
 		# Reset orbit tracking now that we've successfully scored
 		reset_orbit_tracking()
+		
+		# Ensure we're not in orbit anymore
+		has_completed_orbit = false
+		pending_score = false
 
 func spawn_smoke_burst() -> void:
 	# Create one soft body particle at a time
@@ -1513,7 +1539,7 @@ func enable_shooting() -> void:
 	# Keep current fuel as is
 
 func handle_shooting() -> void:
-	if Input.is_action_just_pressed("ui_accept"):  # Space key
+	if Input.is_action_just_pressed("ui_select") or Input.is_action_just_pressed("ui_accept"):
 		shoot_projectile()
 
 func shoot_projectile() -> void:

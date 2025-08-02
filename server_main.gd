@@ -38,17 +38,23 @@ class PlayerData:
 		color_index = color
 
 func _ready():
-	print("Starting dedicated server on port ", PORT)
+	#print("Starting dedicated server on port ", PORT)
 	
 	# Create multiplayer peer
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_server(PORT, MAX_PLAYERS * 10)  # Allow multiple games
 	
 	if error != OK:
-		print("Failed to create server: ", error)
+		print("Failed to create server on port ", PORT, ": ", error)
+		print("Error code: ", error)
+		if error == ERR_CANT_CREATE:
+			print("Cannot create server - port may be in use or permission denied")
+		elif error == ERR_ALREADY_IN_USE:
+			print("Port already in use")
 		return
 		
 	get_multiplayer().multiplayer_peer = peer
+	print("Server started successfully on port ", PORT)
 	
 	# Connect signals
 	get_multiplayer().peer_connected.connect(_on_peer_connected)
@@ -61,20 +67,21 @@ func _ready():
 	add_child(asteroid_timer)
 	asteroid_timer.start()
 	
-	print("Server started successfully")
+	#print("Server started successfully")
 
 func _on_peer_connected(id: int):
-	print("Player connected: ", id)
+	#print("Player connected: ", id)
+	pass
 
 func _on_peer_disconnected(id: int):
-	print("Player disconnected: ", id)
+	#print("Player disconnected: ", id)
 	_remove_player_from_game(id)
 
 # RPC from client
 @rpc("any_peer", "reliable")
 func request_join_game(sender_peer_id: int, player_name: String = "Player"):
 	var sender_id = get_multiplayer().get_remote_sender_id()
-	print("Player ", sender_id, " (", player_name, ") requesting to join game")
+	#print("Player ", sender_id, " (", player_name, ") requesting to join game")
 	
 	# Use the actual sender ID from multiplayer, not the passed parameter
 	_handle_join_request(sender_id, player_name)
@@ -163,7 +170,7 @@ func _create_new_game() -> GameState:
 	var game_id = _generate_game_id()
 	var game = GameState.new(game_id)
 	games[game_id] = game
-	print("Created new game: ", game_id)
+	#print("Created new game: ", game_id)
 	return game
 
 func _generate_game_id() -> String:
@@ -181,7 +188,7 @@ func _get_game_player_list(game: GameState) -> Array:
 
 func _start_game(game: GameState):
 	game.started = true
-	print("Starting game: ", game.id)
+	#print("Starting game: ", game.id)
 	
 	# Generate initial planets
 	_generate_planets_for_game(game)
@@ -510,7 +517,7 @@ func request_deactivate_launchpad(sender_peer_id: int, launchpad_index: int):
 
 func _start_ascension(game: GameState):
 	game.is_ascending = true
-	print("Game ", game.id, " entering ascension phase!")
+	#print("Game ", game.id, " entering ascension phase!")
 	
 	# Notify all players to start ascension
 	for peer_id in game.players:

@@ -1,7 +1,7 @@
 extends SceneTree
 
 func _init():
-	print("Initializing Spaceloop Server...")
+	#print("Initializing Spaceloop Server...")
 	
 	# Create a root node for the server
 	var server_root = Node2D.new()
@@ -14,10 +14,10 @@ func _init():
 	server.set_script(load("res://server.gd"))
 	server_root.add_child(server)
 	
-	print("Server node added to scene tree")
+	#print("Server node added to scene tree")
 	
 	# Keep the server running
 	set_auto_accept_quit(false)
 
 func _finalize():
-	print("Server shutting down...")
+	#print("Server shutting down...")

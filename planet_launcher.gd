@@ -20,8 +20,8 @@ var max_radius: float = 80.0
 # Spawn position (now for stationary planets)
 var spawn_x_min: float = 300.0
 var spawn_x_max: float = 800.0
-var spawn_y_min: float = 300.0
-var spawn_y_max: float = 1000.0
+var spawn_y_min: float = 200.0
+var spawn_y_max: float = 800.0
 
 func _ready() -> void:
 	# Set initial spawn time

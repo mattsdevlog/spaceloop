@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dpejjskek35il" path="res://game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ground.tscn" id="2_ground"]
-[ext_resource type="PackedScene" path="res://scenes/planet_launcher.tscn" id="3_planet_launcher"]
-[ext_resource type="PackedScene" path="res://scenes/player_spaceship.tscn" id="4_player"]
-[ext_resource type="PackedScene" path="res://scenes/launchpad.tscn" id="5_launchpad"]
+[ext_resource type="PackedScene" uid="uid://bwb5jtm431hq7" path="res://scenes/planet_launcher.tscn" id="3_planet_launcher"]
+[ext_resource type="PackedScene" uid="uid://mnyl1vw6d2qd" path="res://scenes/player_spaceship.tscn" id="4_player"]
+[ext_resource type="PackedScene" uid="uid://dbh3gsl4ix20l" path="res://scenes/practice_launchpad.tscn" id="5_launchpad"]
 [ext_resource type="PackedScene" path="res://scenes/asteroid_spawner.tscn" id="6_asteroids"]
 
 [node name="Game" type="Node2D"]
@@ -13,11 +13,12 @@ script = ExtResource("1_game")
 [node name="Ground" parent="." instance=ExtResource("2_ground")]
 position = Vector2(556, 1257)
 
+[node name="PlayerSpaceship" parent="." instance=ExtResource("4_player")]
+dual_rocket_mode = false
+
 [node name="PlanetLauncher" parent="." instance=ExtResource("3_planet_launcher")]
 gravity_influence_distance = 300.0
 planet_gravity_strength = 400.0
-
-[node name="PlayerSpaceship" parent="." instance=ExtResource("4_player")]
 
 [node name="Launchpad" parent="." instance=ExtResource("5_launchpad")]
 position = Vector2(600, 1221)

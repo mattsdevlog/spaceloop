@@ -31,14 +31,14 @@ class PlayerData:
 		color_index = color
 
 func _ready():
-	print("Starting dedicated server on port ", PORT)
+	#print("Starting dedicated server on port ", PORT)
 	
 	# Create multiplayer peer
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_server(PORT, MAX_PLAYERS * 10)  # Allow multiple games
 	
 	if error != OK:
-		print("Failed to create server: ", error)
+		#print("Failed to create server: ", error)
 		return
 		
 	multiplayer.multiplayer_peer = peer
@@ -47,14 +47,14 @@ func _ready():
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	
-	print("Server started successfully")
+	#print("Server started successfully")
 
 func _on_peer_connected(id: int):
-	print("Player connected: ", id)
+	#print("Player connected: ", id)
 	# Client will request to join a game
 
 func _on_peer_disconnected(id: int):
-	print("Player disconnected: ", id)
+	#print("Player disconnected: ", id)
 	_remove_player_from_game(id)
 
 func _remove_player_from_game(player_id: int):
@@ -77,7 +77,7 @@ func _remove_player_from_game(player_id: int):
 @rpc("any_peer", "call_remote", "reliable")
 func request_join_game():
 	var sender_id = multiplayer.get_remote_sender_id()
-	print("Player ", sender_id, " requesting to join game")
+	#print("Player ", sender_id, " requesting to join game")
 	
 	# Find an available game or create new one
 	var game = _find_available_game()
@@ -115,7 +115,7 @@ func _create_new_game() -> GameState:
 	var game_id = _generate_game_id()
 	var game = GameState.new(game_id)
 	games[game_id] = game
-	print("Created new game: ", game_id)
+	#print("Created new game: ", game_id)
 	return game
 
 func _generate_game_id() -> String:
@@ -132,7 +132,7 @@ func _get_game_player_list(game: GameState) -> Array:
 
 func _start_game(game: GameState):
 	game.started = true
-	print("Starting game: ", game.id)
+	#print("Starting game: ", game.id)
 	
 	# Notify all players that game is starting
 	for peer_id in game.players:

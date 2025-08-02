@@ -21,13 +21,14 @@ func _ready() -> void:
 	# Hide game elements initially
 	$PlayerSpaceship.visible = false
 	$PlanetLauncher.visible = false
+	$PlanetLauncher.set_process(false)  # Stop planet spawning
 	$Launchpad.visible = false
 	$AsteroidSpawner.set_process(false)
 	
-	print("Menu ready, buttons connected")
+	#print("Menu ready, buttons connected")
 
 func _on_play_pressed() -> void:
-	print("Play button pressed - showing name entry")
+	#print("Play button pressed - showing name entry")
 	# Show name entry panel
 	$MainMenu/PlayButton.visible = false
 	$MainMenu/PracticeButton.visible = false
@@ -36,7 +37,7 @@ func _on_play_pressed() -> void:
 	$MainMenu/NameEntryPanel/NameInput.grab_focus()
 
 func _on_practice_pressed() -> void:
-	print("Practice button pressed")
+	#print("Practice button pressed")
 	practice_mode = true
 	start_game()
 
@@ -49,15 +50,11 @@ func start_game() -> void:
 	# Show game elements
 	$PlayerSpaceship.visible = true
 	$Launchpad.visible = true
+	$PlanetLauncher.visible = true
+	$PlanetLauncher.set_process(true)  # Start planet spawning
+	$AsteroidSpawner.set_process(true)
 	
-	if not practice_mode:
-		# Normal mode - show planets and asteroids
-		$PlanetLauncher.visible = true
-		$AsteroidSpawner.set_process(true)
-	else:
-		# Practice mode - no planets or asteroids
-		$PlanetLauncher.visible = false
-		$AsteroidSpawner.set_process(false)
+	# Both practice and normal mode now have planets and asteroids
 	
 	# Unpause the game (not needed if we didn't pause)
 	# get_tree().paused = false
@@ -73,7 +70,10 @@ func _on_name_confirm() -> void:
 	if player_name.length() == 0:
 		player_name = "Player"  # Default name
 	
-	print("Player name: ", player_name)
+	# Filter the player name for inappropriate content
+	player_name = ProfanityFilter.filter_text(player_name)
+	
+	#print("Player name: ", player_name)
 	
 	# Store the name globally so multiplayer scene can access it
 	Globals.player_name = player_name

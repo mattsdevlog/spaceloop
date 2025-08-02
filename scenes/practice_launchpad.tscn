@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbh3gsl4ix20l"]
+
+[ext_resource type="Script" uid="uid://c2ybs2fs5jxej" path="res://practice_launchpad.gd" id="1_practice"]
+
+[node name="PracticeLaunchpad" type="Node2D"]
+script = ExtResource("1_practice")

@@ -91,14 +91,12 @@ func update_from_server(new_position: Vector2, new_velocity: Vector2) -> void:
 		position = new_position
 
 func _draw() -> void:
-	# Draw the asteroid polygon
+	# Draw the asteroid as hollow (outline only)
 	if polygon_points.size() > 2:
-		draw_polygon(polygon_points, PackedColorArray([asteroid_color]))
-		
-		# Draw outline for better visibility
+		# Draw outline only - no fill
 		for i in range(polygon_points.size()):
 			var next = (i + 1) % polygon_points.size()
-			draw_line(polygon_points[i], polygon_points[next], asteroid_color, 2.0)
+			draw_line(polygon_points[i], polygon_points[next], Color.WHITE, 2.0)
 
 func get_radius() -> float:
 	return asteroid_radius

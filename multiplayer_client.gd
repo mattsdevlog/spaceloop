@@ -4,11 +4,11 @@ extends Node2D
 const SERVER_IP = "127.0.0.1"  # Change this to your server IP
 const SERVER_PORT = 8910
 
-# Player colors
+# Player colors - all white
 const PLAYER_COLORS = [
-	Color.YELLOW,           # Player 1
-	Color.LIGHT_BLUE,       # Player 2
-	Color(1.0, 0.3, 0.3)   # Player 3 (Red)
+	Color.WHITE,           # Player 1
+	Color.WHITE,           # Player 2
+	Color.WHITE            # Player 3
 ]
 
 # Game state
@@ -48,14 +48,14 @@ var server_asteroids = {}  # Dictionary of asteroid_id -> asteroid node
 var server_planets = {}  # Dictionary of planet_id -> planet node
 
 func _ready():
-	print("Multiplayer game starting...")
+	#print("Multiplayer game starting...")
 	
 	# Connect to server
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_client(SERVER_IP, SERVER_PORT)
 	
 	if error != OK:
-		print("Failed to connect to server: ", error)
+		#print("Failed to connect to server: ", error)
 		_return_to_menu()
 		return
 	
@@ -91,17 +91,19 @@ func _ready():
 		camera_start_y = camera.position.y
 
 func _on_connected_to_server():
-	print("Connected to server! My ID: ", my_peer_id)
+	#print("Connected to server! My ID: ", my_peer_id)
 	# Request to join a game with player name
 	var player_name = Globals.player_name if Globals.player_name != "" else "Player"
-	rpc_id(1, "request_join_game", my_peer_id, player_name)
+	# Filter the name before sending to server
+	var filtered_name = ProfanityFilter.filter_text(player_name)
+	rpc_id(1, "request_join_game", my_peer_id, filtered_name)
 
 func _on_connection_failed():
-	print("Failed to connect to server")
+	#print("Failed to connect to server")
 	_return_to_menu()
 
 func _on_server_disconnected():
-	print("Server disconnected")
+	#print("Server disconnected")
 	_return_to_menu()
 
 func _return_to_menu():
@@ -150,19 +152,23 @@ func _process(delta: float):
 		
 		if victory_phase == 1:  # Congrats message
 			if victory_timer >= 5.0:
-				congrats_label.visible = false
-				worth_label.visible = true
+				if congrats_label:
+					congrats_label.visible = false
+				if worth_label:
+					worth_label.visible = true
 				victory_phase = 2
 				victory_timer = 0.0
 		elif victory_phase == 2:  # Worth message
 			if victory_timer >= 5.0:
-				worth_label.visible = false
+				if worth_label:
+					worth_label.visible = false
 				victory_phase = 3
 				victory_timer = 0.0
 		elif victory_phase == 3:  # Fading to white
 			var fade_progress = min(victory_timer / 3.0, 1.0)  # 3 seconds to fade
-			white_fade.visible = true
-			white_fade.color.a = fade_progress
+			if white_fade:
+				white_fade.visible = true
+				white_fade.color.a = fade_progress
 			
 			if victory_timer >= 3.0:
 				victory_phase = 4
@@ -229,7 +235,7 @@ func update_ascending_camera():
 # RPC from server
 @rpc("authority", "reliable")
 func joined_game(server_game_id: String, color_index: int, player_list: Array):
-	print("Joined game: ", server_game_id, " as color ", color_index)
+	#print("Joined game: ", server_game_id, " as color ", color_index)
 	game_id = server_game_id
 	my_color_index = color_index
 	
@@ -255,14 +261,16 @@ func joined_game(server_game_id: String, color_index: int, player_list: Array):
 
 @rpc("authority", "reliable")
 func player_joined(peer_id: int, color_index: int, player_name: String = "Player"):
-	print("Player joined: ", peer_id, " (", player_name, ") with color ", color_index)
-	player_names[peer_id] = player_name
+	#print("Player joined: ", peer_id, " (", player_name, ") with color ", color_index)
+	# Filter the player name
+	var filtered_name = ProfanityFilter.filter_text(player_name)
+	player_names[peer_id] = filtered_name
 	_create_player(peer_id, color_index, false)
 	_update_player_count()
 
 @rpc("authority", "reliable")
 func player_left(peer_id: int):
-	print("Player left: ", peer_id)
+	#print("Player left: ", peer_id)
 	if peer_id in players and is_instance_valid(players[peer_id]):
 		players[peer_id].queue_free()
 		players.erase(peer_id)
@@ -270,7 +278,7 @@ func player_left(peer_id: int):
 
 @rpc("authority", "reliable")
 func game_started():
-	print("Game started!")
+	#print("Game started!")
 	is_game_started = true
 	waiting_label.visible = false
 	# Chat input already visible from joined_game
@@ -296,7 +304,7 @@ func player_inputs_updated(peer_id: int, input_left: bool, input_right: bool, in
 
 @rpc("authority", "reliable")
 func player_scored_update(peer_id: int, planet_index: int):
-	print("Player ", peer_id, " scored on planet ", planet_index)
+	#print("Player ", peer_id, " scored on planet ", planet_index)
 	# Decrement the combined score
 	combined_score = max(0, combined_score - 1)
 	_update_score_display()
@@ -366,11 +374,11 @@ func start_victory_sequence():
 		projectile.queue_free()
 	
 	# Update congrats message with winner name
-	if winner_id in player_names:
-		var winner_name = player_names[winner_id]
-		congrats_label.text = "CONGRATS %s, YOU HAVE ASCENDED" % winner_name.to_upper()
-	
-	congrats_label.visible = true
+	if congrats_label:
+		if winner_id in player_names:
+			var winner_name = player_names[winner_id]
+			congrats_label.text = "CONGRATS %s, YOU HAVE ASCENDED" % winner_name.to_upper()
+		congrats_label.visible = true
 
 # RPC to server (defined for clarity)
 @rpc("any_peer", "reliable")
@@ -426,7 +434,7 @@ func update_player_health(player_id: int, health: float):
 # Planet and asteroid spawning RPCs
 @rpc("authority", "reliable")
 func spawn_planet(planet_id: int, position: Vector2, radius: float, color: Color):
-	print("Spawning planet ", planet_id, " at ", position, " with color ", color)
+	#print("Spawning planet ", planet_id, " at ", position, " with color ", color)
 	
 	# Create planet from scene
 	var planet_scene = load("res://scenes/planet.tscn")
@@ -444,7 +452,7 @@ func spawn_planet(planet_id: int, position: Vector2, radius: float, color: Color
 
 @rpc("authority", "reliable")
 func spawn_asteroid(asteroid_id: int, position: Vector2, velocity: Vector2, rotation_speed: float, radius: float, shape_seed: int):
-	print("Spawning asteroid ", asteroid_id)
+	#print("Spawning asteroid ", asteroid_id)
 	
 	# Create a simple asteroid that doesn't simulate physics locally
 	var asteroid = Node2D.new()
@@ -494,6 +502,7 @@ func _create_player(peer_id: int, color_index: int, is_local: bool) -> Node2D:
 	
 	# Set color
 	player.ship_color = PLAYER_COLORS[color_index]
+	player.assigned_color_index = color_index
 	
 	# Set player name
 	player.player_name = player_names.get(peer_id, "Player")
@@ -569,8 +578,10 @@ func _input(event):
 				# Send the message if not empty
 				var message = chat_input.text.strip_edges()
 				if message.length() > 0:
+					# Filter the message before sending
+					var filtered_message = ProfanityFilter.filter_text(message)
 					# Send to server
-					rpc_id(1, "send_chat_message", my_peer_id, message)
+					rpc_id(1, "send_chat_message", my_peer_id, filtered_message)
 					chat_input.text = ""
 				# Release focus
 				chat_input.release_focus()

@@ -2,10 +2,10 @@ extends Node2D
 
 var launchpad_size: Vector2 = Vector2(100, 20)
 var launchpad_color: Color = Color.WHITE
-var active_color: Color = Color.WHITE
 var is_active: bool = false
 var blink_timer: float = 0.0
 var blink_on: bool = true
+var has_deactivated: bool = false  # Track if we've deactivated after scoring
 var protection_radius: float = 240.0  # Radius of protective arc (doubled)
 var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # Semi-transparent white
 var arc_visible: bool = false
@@ -13,7 +13,8 @@ var arc_visibility_timer: float = 0.0
 var arc_fade_time: float = 0.5  # Time to fade out after no asteroids nearby
 var detection_radius: float = 400.0  # Distance to detect approaching asteroids
 var wave_time: float = 0.0  # For animating the wavy effect
-var deactivation_timer: float = 0.0  # Timer to ensure deactivation sticks
+var force_white: bool = false  # Force white color regardless of state
+var scored: bool = false  # Track if player has scored on this pad
 
 func _ready() -> void:
 	add_to_group("launchpad")
@@ -26,40 +27,33 @@ func _draw() -> void:
 		var current_color = Color(arc_color.r, arc_color.g, arc_color.b, arc_color.a * alpha)
 		draw_animated_arc(Vector2.ZERO, protection_radius, -PI, 0, current_color, 3.0)
 	
-	var color = launchpad_color
-	if is_active:
-		color = Color.WHITE if blink_on else Color.BLACK
+	# Draw launchpad with blinking when active
+	var color = Color.WHITE
+	if is_active and not has_deactivated:
+		if blink_on:
+			color = Color.WHITE
+		else:
+			color = Color.BLACK
 	else:
-		# When not active, always show as white (not blinking)
+		# Not active or has deactivated - always white
 		color = Color.WHITE
+	
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
 	draw_rect(rect, color)
 	
 	# Draw border
 	draw_rect(rect, Color.WHITE, false, 2.0)
 	
-	# Draw landing indicators (removed - now the whole pad blinks yellow)
-
-func activate() -> void:
-	is_active = true
-	blink_timer = 0.0
-	blink_on = true
-	deactivation_timer = 0.0  # Cancel any pending deactivation
-	queue_redraw()
-
-func deactivate() -> void:
-	# Set a timer to ensure deactivation happens
-	deactivation_timer = 0.1  # Deactivate after 0.1 seconds
-	is_active = false
-	blink_on = true  # Reset blink state
-	blink_timer = 0.0  # Reset blink timer
-	queue_redraw()
 
 func is_spaceship_on_pad(spaceship_pos: Vector2) -> bool:
 	var half_width = launchpad_size.x / 2
 	var half_height = launchpad_size.y / 2
 	
 	var local_pos = spaceship_pos - global_position
+	
+	# Debug: Print distance from center
+	#print("[LAUNCHPAD] Spaceship distance from center - X: ", abs(local_pos.x), " Y: ", abs(local_pos.y))
+	#print("[LAUNCHPAD] Required bounds - X: <= ", half_width + 20, " Y: <= ", half_height + 40)
 	
 	# Increased margin to account for taller spaceship
 	return (abs(local_pos.x) <= half_width + 20 and 
@@ -91,12 +85,20 @@ func _process(delta: float) -> void:
 	# Update wave animation
 	wave_time += delta
 	
-	# Handle deactivation timer
-	if deactivation_timer > 0:
-		deactivation_timer -= delta
-		if deactivation_timer <= 0:
-			is_active = false
+	
+	# Update blinking if active
+	if is_active and not has_deactivated:
+		blink_timer += delta
+		if blink_timer >= 0.3:  # Blink every 0.3 seconds
+			blink_timer = 0.0
+			blink_on = not blink_on
+			queue_redraw()
+	elif has_deactivated:
+		# Force white after deactivation
+		if not blink_on or is_active:
 			blink_on = true
+			is_active = false
+			blink_timer = 0.0
 			queue_redraw()
 	
 	# Check for nearby asteroids
@@ -113,7 +115,6 @@ func _process(delta: float) -> void:
 			break
 	
 	# Update arc visibility
-	var old_arc_visible = arc_visible
 	if asteroids_nearby:
 		if not arc_visible:
 			arc_visible = true
@@ -127,16 +128,14 @@ func _process(delta: float) -> void:
 				queue_redraw()
 			arc_visibility_timer = 0
 	
-	# Update blinking if active and not being deactivated
-	if is_active and deactivation_timer <= 0:
-		blink_timer += delta
-		if blink_timer >= 0.3:  # Blink every 0.3 seconds
-			blink_timer = 0.0
-			blink_on = not blink_on
-			queue_redraw()
-	
 	# Only redraw if arc is visible and animating
 	if arc_visible:
+		queue_redraw()
+	
+	# Force redraw when state changes
+	if not is_active and blink_timer > 0:
+		blink_timer = 0.0
+		blink_on = true
 		queue_redraw()
 
 func draw_animated_arc(center: Vector2, radius: float, start_angle: float, end_angle: float, color: Color, width: float) -> void:
@@ -172,3 +171,36 @@ func draw_animated_arc(center: Vector2, radius: float, start_angle: float, end_a
 	# Draw the squiggly line
 	for i in range(points.size() - 1):
 		draw_line(points[i], points[i + 1], color, width)
+
+func activate() -> void:
+	if not scored:  # Only activate if haven't scored yet
+		is_active = true
+		blink_timer = 0.0
+		blink_on = true
+		queue_redraw()
+
+func deactivate() -> void:
+	print("[LAUNCHPAD] deactivate() called")
+	is_active = false
+	blink_on = true  # Reset to white
+	blink_timer = 0.0
+	scored = true  # Mark as scored when deactivated
+	has_deactivated = true  # Set the deactivation flag
+	queue_redraw()
+	
+	# Force immediate redraw multiple times to ensure it takes effect
+	call_deferred("queue_redraw")
+	call_deferred("_force_redraw_white")
+
+func _force_redraw_white() -> void:
+	blink_on = true
+	is_active = false
+	queue_redraw()
+
+func reset_for_next_orbit() -> void:
+	scored = false  # Allow scoring again
+	is_active = false
+	blink_on = true
+	blink_timer = 0.0
+	has_deactivated = false  # Reset deactivation flag
+	queue_redraw()

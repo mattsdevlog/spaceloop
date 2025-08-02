@@ -260,9 +260,3 @@ func _draw() -> void:
 	
 	# Draw filled polygon
 	draw_polygon(polygon_points, PackedColorArray([particle_color]))
-	
-	# Draw outline
-	var outline_color = Color(0.9, 0.9, 0.9, particle_color.a)
-	for i in range(points.size()):
-		var next = (i + 1) % points.size()
-		draw_line(points[i].position - global_position, points[next].position - global_position, outline_color, 1.0)

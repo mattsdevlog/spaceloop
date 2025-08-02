@@ -47,8 +47,8 @@ func _physics_process(delta: float):
 	check_spaceship_collisions()
 
 func _draw():
-	# Draw a simple circle projectile
-	draw_circle(Vector2.ZERO, 3.0, Color.YELLOW)
+	# Draw a simple white circle projectile
+	draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
 	draw_circle(Vector2.ZERO, 2.0, Color.WHITE)
 
 func _on_area_entered(area):

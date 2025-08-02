@@ -24,14 +24,14 @@ var is_game_started: bool = false
 @onready var players_container = $Players
 
 func _ready():
-	print("Multiplayer game starting...")
+	#print("Multiplayer game starting...")
 	
 	# Connect to server
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_client(SERVER_IP, SERVER_PORT)
 	
 	if error != OK:
-		print("Failed to connect to server: ", error)
+		#print("Failed to connect to server: ", error)
 		_return_to_menu()
 		return
 	
@@ -48,16 +48,16 @@ func _ready():
 	_update_player_count()
 
 func _on_connected_to_server():
-	print("Connected to server!")
+	#print("Connected to server!")
 	# Request to join a game
 	rpc_id(1, "request_join_game")
 
 func _on_connection_failed():
-	print("Failed to connect to server")
+	#print("Failed to connect to server")
 	_return_to_menu()
 
 func _on_server_disconnected():
-	print("Server disconnected")
+	#print("Server disconnected")
 	_return_to_menu()
 
 func _return_to_menu():
@@ -65,7 +65,7 @@ func _return_to_menu():
 
 @rpc("authority", "call_local", "reliable")
 func joined_game(server_game_id: String, color_index: int, player_list: Array):
-	print("Joined game: ", server_game_id, " as color ", color_index)
+	#print("Joined game: ", server_game_id, " as color ", color_index)
 	game_id = server_game_id
 	my_color_index = color_index
 	
@@ -81,13 +81,13 @@ func joined_game(server_game_id: String, color_index: int, player_list: Array):
 
 @rpc("authority", "call_local", "reliable")
 func player_joined(peer_id: int, color_index: int):
-	print("Player joined: ", peer_id, " with color ", color_index)
+	#print("Player joined: ", peer_id, " with color ", color_index)
 	_create_player(peer_id, color_index, false)
 	_update_player_count()
 
 @rpc("authority", "call_local", "reliable")
 func player_left(peer_id: int):
-	print("Player left: ", peer_id)
+	#print("Player left: ", peer_id)
 	if peer_id in players:
 		players[peer_id].queue_free()
 		players.erase(peer_id)
@@ -95,7 +95,7 @@ func player_left(peer_id: int):
 
 @rpc("authority", "call_local", "reliable")
 func game_started():
-	print("Game started!")
+	#print("Game started!")
 	is_game_started = true
 	waiting_label.visible = false
 	
@@ -191,7 +191,7 @@ func player_state_updated(peer_id: int, position: Vector2, rotation: float, velo
 
 @rpc("authority", "call_local", "reliable")
 func player_scored_update(peer_id: int, planet_index: int):
-	print("Player ", peer_id, " scored on planet ", planet_index)
+	#print("Player ", peer_id, " scored on planet ", planet_index)
 	# TODO: Update UI with scores
 
 func _update_player_count():

@@ -30,8 +30,8 @@ func _ready() -> void:
 	# Add to planets group
 	add_to_group("planets")
 	
-	# Set random color for variety
-	planet_color = Color(randf(), randf(), randf())
+	# Set to white
+	planet_color = Color.WHITE
 	queue_redraw()
 
 func initialize(initial_radius: float) -> void:
@@ -62,7 +62,10 @@ func _process(delta: float) -> void:
 		orbit_completion_animation = min(1.0, orbit_completion_animation + delta * 3.0)  # Fill in over ~0.33 seconds
 		queue_redraw()
 	elif current_alpha < 1.0 or is_fading_in or is_fading_out:
-		# Only redraw if fading or animating
+		# Redraw if fading or animating
+		queue_redraw()
+	else:
+		# Always redraw to animate the gravity sphere
 		queue_redraw()
 
 func mark_as_orbited() -> void:
@@ -149,18 +152,16 @@ func draw_squiggly_arc(center: Vector2, radius: float, start_angle: float, arc_l
 
 func _draw() -> void:
 	# Apply alpha to colors
-	var draw_color = Color(planet_color.r, planet_color.g, planet_color.b, current_alpha)
-	var outline_color = draw_color.darkened(0.3)
-	var influence_color = Color(1, 1, 1, 0.1 * current_alpha)
+	var draw_color = Color(1, 1, 1, current_alpha)  # White with alpha
+	var outline_color = Color(0.8, 0.8, 0.8, current_alpha)  # Slightly darker white for outline
+	var influence_color = Color(1, 1, 1, 0.1 * current_alpha)  # White with low alpha
 	
 	# Draw the planet circle
 	draw_circle(Vector2.ZERO, radius, draw_color)
 	
 	# Draw orbit progress indicator - always show if there's progress
 	if orbit_progress > 0 and not has_been_orbited:
-		var progress_color = Color.YELLOW
-		if orbit_completed:
-			progress_color = Color.GREEN  # Change to green when completed
+		var progress_color = Color.WHITE
 		progress_color.a = current_alpha
 		var arc_radius = radius + 15  # Slightly outside the planet
 		var arc_width = 8.0  # Thick border
@@ -199,4 +200,4 @@ func _draw() -> void:
 	
 	# Draw gravity influence area with animated waves
 	if gravity_influence_distance > radius and current_alpha > 0.5:
-		draw_animated_squiggly_circle(Vector2.ZERO, gravity_influence_distance, influence_color, 1.0)
+		draw_animated_squiggly_circle(Vector2.ZERO, gravity_influence_distance, influence_color, 4.0)

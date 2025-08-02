@@ -41,23 +41,23 @@ func connect_to_server(address: String) -> int:
 	return error
 
 func _on_peer_connected(id: int):
-	print("Peer connected: ", id)
+	#print("Peer connected: ", id)
 	player_connected.emit(id)
 
 func _on_peer_disconnected(id: int):
-	print("Peer disconnected: ", id)
+	#print("Peer disconnected: ", id)
 	player_disconnected.emit(id)
 
 func _on_connected_to_server():
-	print("Connected to server")
+	#print("Connected to server")
 	connected_to_server.emit()
 
 func _on_connection_failed():
-	print("Failed to connect to server")
+	#print("Failed to connect to server")
 	connection_failed.emit()
 
 func _on_server_disconnected():
-	print("Disconnected from server")
+	#print("Disconnected from server")
 	server_disconnected.emit()
 
 func get_unique_id() -> int:

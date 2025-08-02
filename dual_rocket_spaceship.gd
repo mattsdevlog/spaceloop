@@ -605,10 +605,11 @@ func check_launchpad() -> void:
 		launchpad.deactivate()
 		
 		if completed_planet and is_instance_valid(completed_planet):
-			print("Marking planet as orbited")
+			#print("Marking planet as orbited")
 			completed_planet.mark_as_orbited()
 			completed_planet = null
 		else:
-			print("No valid completed_planet to mark as orbited")
+			#print("No valid completed_planet to mark as orbited")
+			pass
 		
 		reset_orbit_tracking()
