@@ -9,6 +9,7 @@ var games = {}  # Dictionary of game_id -> GameState
 var player_game_map = {}  # Dictionary of player_id -> game_id
 var status_connections = []  # List of peer_ids that are just checking status
 var ascended_players = []  # List of player names who have won
+var all_connected_peers = []  # List of all connected peer IDs
 const ASCENDED_FILE = "user://ascended_players.txt"
 
 class GameState:
@@ -75,17 +76,23 @@ func _ready():
 	
 	# Start HTTP status server
 	var http_server = load("res://http_status_server.gd").new()
-	http_server.set_references(ascended_players, games)
+	http_server.set_references(ascended_players, games, all_connected_peers)
 	add_child(http_server)
 	
 	#print("Server started successfully")
 
 func _on_peer_connected(id: int):
 	#print("Player connected: ", id)
-	pass
+	# Add to all connected peers list
+	if not id in all_connected_peers:
+		all_connected_peers.append(id)
 
 func _on_peer_disconnected(id: int):
 	#print("Player disconnected: ", id)
+	
+	# Remove from all connected peers list
+	if id in all_connected_peers:
+		all_connected_peers.erase(id)
 	
 	# Check if this was a status connection
 	if id in status_connections:

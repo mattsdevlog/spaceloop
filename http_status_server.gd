@@ -5,6 +5,7 @@ var tcp_server: TCPServer
 var port: int = 8911  # Different port from game server
 var ascended_players_ref = null  # Reference to main server's ascended list
 var games_ref = null  # Reference to main server's games
+var all_connected_peers_ref = null  # Reference to main server's connected peers list
 
 func _ready():
 	tcp_server = TCPServer.new()
@@ -87,9 +88,9 @@ func _send_ascended_list(client: StreamPeerTCP):
 
 func _send_player_count(client: StreamPeerTCP):
 	var total_players = 0
-	if games_ref:
-		for game_id in games_ref:
-			total_players += games_ref[game_id].players.size()
+	if all_connected_peers_ref:
+		# Count all connected peers (excluding status connections)
+		total_players = all_connected_peers_ref.size()
 	
 	var json_data = JSON.stringify({
 		"online_players": total_players
@@ -101,10 +102,12 @@ func _send_full_status(client: StreamPeerTCP):
 	var total_players = 0
 	var games_count = 0
 	
+	if all_connected_peers_ref:
+		# Count all connected peers
+		total_players = all_connected_peers_ref.size()
+	
 	if games_ref:
 		games_count = games_ref.size()
-		for game_id in games_ref:
-			total_players += games_ref[game_id].players.size()
 	
 	var ascended_list = []
 	if ascended_players_ref:
@@ -133,6 +136,8 @@ func _send_http_response(client: StreamPeerTCP, code: int, status: String, body:
 	
 	client.put_data(response.to_utf8_buffer())
 
-func set_references(ascended_players, games):
+func set_references(ascended_players, games, all_connected_peers = null):
 	ascended_players_ref = ascended_players
 	games_ref = games
+	if all_connected_peers != null:
+		all_connected_peers_ref = all_connected_peers

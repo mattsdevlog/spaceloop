@@ -13,6 +13,10 @@ var scroll_container: ScrollContainer
 var scroll_speed: float = 50.0
 var scroll_position: float = 0.0
 var ascended_list: Array = []
+var looking_for_server: bool = false
+var looking_dots_timer: float = 0.0
+var looking_dots_count: int = 0
+var connected_to_server: bool = false
 
 func _ready() -> void:
 	# Get menu reference
@@ -48,6 +52,9 @@ func _ready() -> void:
 	# Enable player count display
 	online_players_label.visible = true
 	
+	# Connect to server immediately to be counted as online
+	_connect_to_server()
+	
 	# Request ascended players list via HTTP
 	_request_ascended_list_http()
 	
@@ -80,6 +87,12 @@ func _on_play_pressed() -> void:
 func _on_practice_pressed() -> void:
 	#print("Practice button pressed")
 	practice_mode = true
+	
+	# Disconnect from server before starting practice mode
+	if connected_to_server and get_multiplayer().has_multiplayer_peer():
+		get_multiplayer().multiplayer_peer.close()
+		connected_to_server = false
+	
 	start_game()
 
 func start_game() -> void:
@@ -116,6 +129,11 @@ func _on_name_confirm() -> void:
 	player_name = ProfanityFilter.filter_text(player_name)
 	
 	print("Player name: ", player_name)
+	
+	# Disconnect from server before switching scenes
+	if connected_to_server and get_multiplayer().has_multiplayer_peer():
+		get_multiplayer().multiplayer_peer.close()
+		connected_to_server = false
 	
 	# Store the name globally so multiplayer scene can access it
 	Globals.player_name = player_name
@@ -191,6 +209,9 @@ func return_to_menu() -> void:
 	# Reset button focus
 	current_menu_index = 0
 	menu_buttons[0].grab_focus()
+	
+	# Reconnect to server to be counted as online again
+	_connect_to_server()
 
 func _request_ascended_list_http():
 	# Create HTTP request
@@ -201,7 +222,8 @@ func _request_ascended_list_http():
 	# Request the status from HTTP server
 	var error = http.request("http://127.0.0.1:8911/status")
 	if error != OK:
-		ascended_label.text = "SERVER OFFLINE"
+		looking_for_server = true
+		_update_looking_text()
 		http.queue_free()
 
 func _on_http_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
@@ -210,7 +232,8 @@ func _on_http_request_completed(result: int, response_code: int, headers: Packed
 		http.queue_free()
 	
 	if response_code != 200:
-		ascended_label.text = "SERVER OFFLINE"
+		looking_for_server = true
+		_update_looking_text()
 		return
 	
 	# Parse JSON response
@@ -224,6 +247,7 @@ func _on_http_request_completed(result: int, response_code: int, headers: Packed
 	var data = json.data
 	if data.has("ascended_players"):
 		ascended_list = data.ascended_players
+		looking_for_server = false  # Found server
 		_update_ascended_display()
 	
 	# Also update online players if available
@@ -254,6 +278,14 @@ func _update_ascended_display():
 		scroll_container.visible = false
 
 func _process(delta: float) -> void:
+	# Handle animated dots for "LOOKING FOR SERVER"
+	if looking_for_server:
+		looking_dots_timer += delta
+		if looking_dots_timer >= 0.5:  # Update dots every 0.5 seconds
+			looking_dots_timer = 0.0
+			looking_dots_count = (looking_dots_count + 1) % 4  # Cycle through 0, 1, 2, 3
+			_update_looking_text()
+	
 	# Handle scrolling of ascended names
 	if scroll_container and scroll_container.visible and ascended_names.text != "":
 		scroll_position += scroll_speed * delta
@@ -269,3 +301,23 @@ func _process(delta: float) -> void:
 			scroll_position -= text_width
 		
 		scroll_container.scroll_horizontal = int(scroll_position)
+
+func _update_looking_text():
+	var dots = ""
+	for i in range(looking_dots_count):
+		dots += "."
+	ascended_label.text = "LOOKING FOR SERVER" + dots
+
+func _connect_to_server():
+	# Connect to game server just to be counted as online
+	if not connected_to_server:
+		var peer = ENetMultiplayerPeer.new()
+		var error = peer.create_client("127.0.0.1", 8910)
+		
+		if error == OK:
+			get_multiplayer().multiplayer_peer = peer
+			connected_to_server = true
+			# We're now connected and will be counted in all_connected_peers
+			print("Connected to server from main menu")
+		else:
+			print("Failed to connect to server from main menu")
