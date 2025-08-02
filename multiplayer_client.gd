@@ -45,6 +45,10 @@ var winner_id: int = -1
 @onready var exit_confirm_panel = $UI/ExitConfirmPanel
 @onready var yes_button = $UI/ExitConfirmPanel/YesButton
 @onready var no_button = $UI/ExitConfirmPanel/NoButton
+@onready var loop_star_label = $UI/LoopStarLabel
+
+# Audio
+var space_music: AudioStreamPlayer = null
 
 # Game objects
 var server_asteroids = {}  # Dictionary of asteroid_id -> asteroid node
@@ -103,6 +107,17 @@ func _ready():
 	if chat_input:
 		chat_input.text_changed.connect(_on_chat_text_changed)
 	
+	# Create space music player
+	space_music = AudioStreamPlayer.new()
+	var music_stream = load("res://assets/space_music.ogg")
+	if music_stream:
+		if music_stream is AudioStreamOggVorbis:
+			music_stream.loop = true  # OGG files use 'loop' property
+		space_music.stream = music_stream
+		space_music.volume_db = -10.0  # Adjust volume as needed
+		space_music.bus = "Master"  # Ensure it's on the master bus
+		add_child(space_music)
+	
 
 func _on_connected_to_server():
 	#print("Connected to server! My ID: ", my_peer_id)
@@ -121,6 +136,9 @@ func _on_server_disconnected():
 	_return_to_menu()
 
 func _return_to_menu():
+	# Stop music before changing scene
+	if space_music and space_music.playing:
+		space_music.stop()
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 func _process(delta: float):
@@ -203,6 +221,11 @@ func start_ascension():
 	# Show ascend label
 	if ascend_label:
 		ascend_label.visible = true
+	
+	# Start playing space music with a small delay
+	if space_music and not space_music.playing:
+		await get_tree().create_timer(0.1).timeout
+		space_music.play()
 	
 	# Turn off ground gravity
 	var ground = get_node_or_null("Ground")
@@ -305,6 +328,13 @@ func game_started():
 	# Show score label when game starts
 	if score_label:
 		score_label.visible = true
+	
+	# Show "LOOP THE STAR" message at game start
+	if loop_star_label:
+		loop_star_label.visible = true
+		# Hide it after 5 seconds
+		await get_tree().create_timer(5.0).timeout
+		loop_star_label.visible = false
 
 @rpc("authority", "reliable")
 func player_full_state_updated(peer_id: int, position: Vector2, rotation: float, velocity: Vector2, fuel: float):
@@ -399,10 +429,14 @@ func start_victory_sequence():
 			var winner_name = player_names[winner_id]
 			congrats_label.text = "CONGRATS %s, YOU HAVE ASCENDED" % winner_name.to_upper()
 		congrats_label.visible = true
+	
+	# Notify server if we are the winner
+	if winner_id == my_peer_id and get_multiplayer().has_multiplayer_peer():
+		rpc_id(1, "notify_player_ascended", my_peer_id)
 
 # RPC to server (defined for clarity)
 @rpc("any_peer", "reliable")
-func request_join_game(peer_id: int):
+func request_join_game(peer_id: int, player_name: String = "Player"):
 	pass
 
 @rpc("any_peer", "reliable")
@@ -424,11 +458,11 @@ func planet_completed(planet_id: int):
 	pass
 
 @rpc("any_peer", "reliable")
-func request_activate_launchpad(sender_id: int, launchpad_index: int):
+func request_activate_launchpad(launchpad_index: int):
 	pass
 
 @rpc("any_peer", "reliable")
-func request_deactivate_launchpad(sender_id: int, launchpad_index: int):
+func request_deactivate_launchpad(launchpad_index: int):
 	pass
 
 @rpc("any_peer", "reliable")
@@ -437,6 +471,10 @@ func notify_ascension_started(sender_id: int):
 
 @rpc("any_peer", "reliable")
 func notify_battle_phase_started(sender_id: int):
+	pass
+
+@rpc("any_peer", "reliable")
+func notify_player_ascended(sender_id: int):
 	pass
 
 @rpc("any_peer", "reliable")
@@ -578,7 +616,7 @@ func _update_player_count():
 	player_count_label.text = "Players: %d/3" % count
 	
 	if count < 3:
-		waiting_label.text = "Waiting for players... (%d/3)" % count
+		waiting_label.text = "Waiting for players\n(%d/3)" % count
 	else:
 		waiting_label.text = "Game starting!"
 
@@ -621,6 +659,14 @@ func _input(event):
 func send_chat_message(sender_id: int, message: String):
 	pass
 
+@rpc("any_peer", "reliable")
+func request_player_count(peer_id: int):
+	pass
+
+@rpc("any_peer", "reliable")
+func request_ascended_list():
+	pass
+
 # RPC from server
 @rpc("authority", "reliable")
 func receive_chat_message(sender_id: int, message: String):
@@ -652,6 +698,12 @@ func spawn_remote_projectile(shooter_id: int, pos: Vector2, vel: Vector2):
 	projectile.global_position = pos
 	projectile.velocity = vel
 	projectile.shooter_id = shooter_id
+	
+	# Play shoot sound at the projectile position if from another player
+	if shooter_id != my_peer_id and shooter_id in players:
+		var shooting_player = players[shooter_id]
+		if is_instance_valid(shooting_player) and shooting_player.shoot_audio:
+			shooting_player.shoot_audio.play()
 
 @rpc("authority", "reliable")
 func player_eliminated(player_id: int, killer_id: int):
@@ -688,3 +740,11 @@ func _on_chat_text_changed(new_text: String):
 	if upper_text != new_text:
 		chat_input.text = upper_text
 		chat_input.caret_column = upper_text.length()
+
+@rpc("authority", "reliable")
+func receive_player_count(count: int):
+	pass
+
+@rpc("authority", "reliable")
+func receive_ascended_list(players: Array):
+	pass

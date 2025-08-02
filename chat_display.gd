@@ -39,7 +39,9 @@ func _draw():
 	if chat_message == "" or chat_message_timer <= 0:
 		return
 		
-	var font = ThemeDB.fallback_font
+	var font = load("res://assets/ConnectionBold-ER1g.otf")
+	if not font:
+		font = ThemeDB.fallback_font
 	var font_size = 32
 	
 	# Calculate total width for centering

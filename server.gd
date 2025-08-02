@@ -170,6 +170,18 @@ func player_scored(planet_index: int):
 			for peer_id in game.players:
 				rpc_id(peer_id, "player_scored_update", sender_id, planet_index)
 
+@rpc("any_peer", "call_remote", "reliable")
+func request_player_count():
+	var sender_id = multiplayer.get_remote_sender_id()
+	
+	# Count total players across all games
+	var total_players = 0
+	for game_id in games:
+		total_players += games[game_id].players.size()
+	
+	# Send count back to requester
+	rpc_id(sender_id, "receive_player_count", total_players)
+
 # Client RPCs (empty implementations for server)
 @rpc("authority", "call_remote", "reliable")
 func joined_game(game_id: String, color_index: int, player_list: Array):
@@ -193,4 +205,8 @@ func player_state_updated(peer_id: int, position: Vector2, rotation: float, velo
 
 @rpc("authority", "call_remote", "reliable")
 func player_scored_update(peer_id: int, planet_index: int):
+	pass
+
+@rpc("authority", "call_remote", "reliable")
+func receive_player_count(count: int):
 	pass

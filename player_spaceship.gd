@@ -97,6 +97,13 @@ var max_settle_velocity: float = 10.0  # Max velocity to be considered "settled"
 var name_display: Node2D = null
 var chat_display: Node2D = null
 
+# Audio
+var thrust_audio: AudioStreamPlayer2D = null
+var is_thrusting: bool = false
+var explosion_audio: AudioStreamPlayer2D = null
+var shoot_audio: AudioStreamPlayer2D = null
+var hit_audio: AudioStreamPlayer2D = null
+
 func _ready() -> void:
 	# Set z_index so spaceship appears above smoke
 	z_index = 1
@@ -114,6 +121,44 @@ func _ready() -> void:
 	chat_display.set_script(ChatDisplay)
 	chat_display.position = Vector2(0, -80)
 	add_child(chat_display)
+	
+	# Create audio player for thrust sound
+	thrust_audio = AudioStreamPlayer2D.new()
+	var thrust_stream = load("res://assets/spaceship_thrust.ogg")
+	if thrust_stream is AudioStreamOggVorbis:
+		thrust_stream.loop = true  # OGG files use 'loop' property
+	thrust_audio.stream = thrust_stream
+	thrust_audio.volume_db = -10.0  # Adjust volume as needed
+	thrust_audio.max_distance = 2000.0  # Hear thrust from far away
+	thrust_audio.attenuation = 0.5  # Gradual falloff
+	add_child(thrust_audio)
+	
+	# Create audio player for explosion sound
+	explosion_audio = AudioStreamPlayer2D.new()
+	var explosion_stream = load("res://assets/explosion.ogg")
+	explosion_audio.stream = explosion_stream
+	explosion_audio.volume_db = -5.0  # Slightly louder than thrust
+	explosion_audio.max_distance = 3000.0  # Hear explosions from far away
+	explosion_audio.attenuation = 0.3  # Very gradual falloff
+	add_child(explosion_audio)
+	
+	# Create audio player for shoot sound
+	shoot_audio = AudioStreamPlayer2D.new()
+	var shoot_stream = load("res://assets/shoot.ogg")
+	shoot_audio.stream = shoot_stream
+	shoot_audio.volume_db = -15.0  # Quieter than explosion
+	shoot_audio.max_distance = 2000.0
+	shoot_audio.attenuation = 0.5
+	add_child(shoot_audio)
+	
+	# Create audio player for hit sound
+	hit_audio = AudioStreamPlayer2D.new()
+	var hit_stream = load("res://assets/hit.ogg")
+	hit_audio.stream = hit_stream
+	hit_audio.volume_db = -10.0  # Medium volume
+	hit_audio.max_distance = 2000.0
+	hit_audio.attenuation = 0.5
+	add_child(hit_audio)
 	
 	# Check if this is a multiplayer game
 	var is_multiplayer = get_parent() and get_parent().name == "Players"
@@ -243,7 +288,10 @@ func handle_single_rocket_input(delta: float, input_left: bool, input_right: boo
 	angular_velocity = clamp(angular_velocity, -rotation_speed, rotation_speed)
 	
 	# Thrust (only if we have fuel or in ascension mode)
-	if input_up and (current_fuel > 0 or is_ascension_mode):
+	var was_thrusting = is_thrusting
+	is_thrusting = input_up and (current_fuel > 0 or is_ascension_mode)
+	
+	if is_thrusting:
 		# Check if we're starting to launch (for all players including remote)
 		if is_on_ground and not is_launching and time_settled_on_pad >= settle_threshold:
 			is_launching = true
@@ -269,6 +317,15 @@ func handle_single_rocket_input(delta: float, input_left: bool, input_right: boo
 	else:
 		# Reset smoke timer when not thrusting
 		smoke_spawn_timer = 0.0
+	
+	# Handle thrust audio
+	if thrust_audio:
+		if is_thrusting and not was_thrusting:
+			# Start playing thrust sound
+			thrust_audio.play()
+		elif not is_thrusting and was_thrusting:
+			# Stop playing thrust sound
+			thrust_audio.stop()
 
 func handle_dual_rocket_input(delta: float, input_left: bool, input_right: bool, input_up: bool) -> void:
 	left_rocket_firing = false
@@ -332,6 +389,18 @@ func handle_dual_rocket_input(delta: float, input_left: bool, input_right: bool,
 	# Limit max speed
 	if velocity.length() > max_speed:
 		velocity = velocity.normalized() * max_speed
+	
+	# Handle thrust audio for dual rocket mode
+	var was_thrusting = is_thrusting
+	is_thrusting = left_rocket_firing or right_rocket_firing
+	
+	if thrust_audio:
+		if is_thrusting and not was_thrusting:
+			# Start playing thrust sound
+			thrust_audio.play()
+		elif not is_thrusting and was_thrusting:
+			# Stop playing thrust sound
+			thrust_audio.stop()
 
 func update_physics(delta: float) -> void:
 	# For remote players, update ground state based on position
@@ -993,7 +1062,7 @@ func on_orbit_completed() -> void:
 		if multiplayer_client and is_multiplayer_authority():
 			var color_index = multiplayer_client.my_color_index
 			# Send RPC to server to activate launchpad for all clients
-			multiplayer_client.rpc_id(1, "request_activate_launchpad", multiplayer_client.my_peer_id, color_index + 1)
+			multiplayer_client.rpc_id(1, "request_activate_launchpad", color_index + 1)
 
 func check_screen_boundaries() -> void:
 	# Check if we're in ascension mode
@@ -1097,6 +1166,10 @@ func shatter(impact_point: Vector2 = Vector2.ZERO) -> void:
 	is_shattered = true
 	pieces.clear()
 	shatter_timer = 0.0
+	
+	# Play explosion sound
+	if explosion_audio:
+		explosion_audio.play()
 	
 	# Reset orbit tracking if we were orbiting
 	if orbiting_planet or tracked_planet:
@@ -1273,7 +1346,7 @@ func respawn() -> void:
 			var multiplayer_client = get_node_or_null("/root/MultiplayerGame")
 			if multiplayer_client and is_multiplayer_authority():
 				var color_index = multiplayer_client.my_color_index
-				multiplayer_client.rpc_id(1, "request_deactivate_launchpad", multiplayer_client.my_peer_id, color_index + 1)
+				multiplayer_client.rpc_id(1, "request_deactivate_launchpad", color_index + 1)
 		else:
 			# Single player
 			var launchpad = get_node_or_null("/root/Game/Launchpad")
@@ -1353,7 +1426,7 @@ func check_launchpad() -> void:
 			var multiplayer_client = get_node_or_null("/root/MultiplayerGame")
 			if multiplayer_client and is_multiplayer_authority():
 				var color_index = multiplayer_client.my_color_index
-				multiplayer_client.rpc_id(1, "request_deactivate_launchpad", multiplayer_client.my_peer_id, color_index + 1)
+				multiplayer_client.rpc_id(1, "request_deactivate_launchpad", color_index + 1)
 				
 				if completed_planet:
 					# Find planet ID by checking server_planets
@@ -1543,11 +1616,15 @@ func enable_shooting() -> void:
 	# Keep current fuel as is
 
 func handle_shooting() -> void:
-	if Input.is_action_just_pressed("ui_select") or Input.is_action_just_pressed("ui_accept"):
+	if Input.is_action_just_pressed("ui_down"):
 		shoot_projectile()
 
 func shoot_projectile() -> void:
 	# No cooldown - allow rapid fire
+	
+	# Play shoot sound
+	if shoot_audio:
+		shoot_audio.play()
 	
 	# Create projectile
 	var projectile = projectile_scene.instantiate()
@@ -1577,6 +1654,10 @@ func take_damage(damage: float, attacker_id: int) -> void:
 	# Only the authority can take damage
 	if not is_multiplayer_authority():
 		return
+	
+	# Play hit sound
+	if hit_audio:
+		hit_audio.play()
 	
 	# Damage reduces fuel by 20% of max fuel
 	var fuel_damage = max_fuel * (damage / 100.0)

@@ -7,6 +7,9 @@ const MAX_PLAYERS = 3
 # Game state
 var games = {}  # Dictionary of game_id -> GameState
 var player_game_map = {}  # Dictionary of player_id -> game_id
+var status_connections = []  # List of peer_ids that are just checking status
+var ascended_players = []  # List of player names who have won
+const ASCENDED_FILE = "user://ascended_players.txt"
 
 class GameState:
 	var id: String
@@ -67,6 +70,14 @@ func _ready():
 	add_child(asteroid_timer)
 	asteroid_timer.start()
 	
+	# Load ascended players list
+	_load_ascended_players()
+	
+	# Start HTTP status server
+	var http_server = load("res://http_status_server.gd").new()
+	http_server.set_references(ascended_players, games)
+	add_child(http_server)
+	
 	#print("Server started successfully")
 
 func _on_peer_connected(id: int):
@@ -75,12 +86,50 @@ func _on_peer_connected(id: int):
 
 func _on_peer_disconnected(id: int):
 	#print("Player disconnected: ", id)
-	_remove_player_from_game(id)
+	
+	# Check if this was a status connection
+	if id in status_connections:
+		status_connections.erase(id)
+	else:
+		# Normal game client
+		_remove_player_from_game(id)
+
+func _is_status_connection(peer_id: int) -> bool:
+	return peer_id in status_connections
+
+func _load_ascended_players():
+	var file = FileAccess.open(ASCENDED_FILE, FileAccess.READ)
+	if file:
+		ascended_players.clear()
+		while not file.eof_reached():
+			var line = file.get_line().strip_edges()
+			if line != "":
+				ascended_players.append(line)
+		file.close()
+		print("Loaded ", ascended_players.size(), " ascended players")
+
+func _save_ascended_players():
+	var file = FileAccess.open(ASCENDED_FILE, FileAccess.WRITE)
+	if file:
+		for player_name in ascended_players:
+			file.store_line(player_name)
+		file.close()
+
+func _add_ascended_player(player_name: String):
+	if not player_name in ascended_players:
+		ascended_players.append(player_name)
+		_save_ascended_players()
+		print("Player ", player_name, " has ascended! Total ascended: ", ascended_players.size())
 
 # RPC from client
 @rpc("any_peer", "reliable")
 func request_join_game(sender_peer_id: int, player_name: String = "Player"):
 	var sender_id = get_multiplayer().get_remote_sender_id()
+	
+	# Ignore if this is a status connection
+	if sender_id in status_connections:
+		return
+	
 	#print("Player ", sender_id, " (", player_name, ") requesting to join game")
 	
 	# Use the actual sender ID from multiplayer, not the passed parameter
@@ -110,6 +159,43 @@ func planet_completed(planet_id: int):
 		if game_id in games:
 			var game = games[game_id]
 			_handle_planet_completion(game, planet_id)
+
+@rpc("any_peer", "reliable")
+func request_player_count(peer_id: int):
+	var sender_id = get_multiplayer().get_remote_sender_id()
+	
+	# Mark this as a status connection
+	if not sender_id in status_connections:
+		status_connections.append(sender_id)
+	
+	# Count total players across all games
+	var total_players = 0
+	for game_id in games:
+		total_players += games[game_id].players.size()
+	
+	# Send count back to requester
+	rpc_id(sender_id, "receive_player_count", total_players)
+	
+	# Disconnect status connections after a short delay
+	await get_tree().create_timer(0.1).timeout
+	if sender_id in status_connections:
+		get_multiplayer().multiplayer_peer.disconnect_peer(sender_id)
+
+@rpc("any_peer", "reliable")
+func request_ascended_list():
+	var sender_id = get_multiplayer().get_remote_sender_id()
+	
+	# Mark this as a status connection to avoid game RPCs
+	if not sender_id in status_connections:
+		status_connections.append(sender_id)
+	
+	# Send the ascended players list to the requester
+	rpc_id(sender_id, "receive_ascended_list", ascended_players)
+	
+	# Disconnect after a short delay
+	await get_tree().create_timer(0.1).timeout
+	if sender_id in status_connections:
+		get_multiplayer().multiplayer_peer.disconnect_peer(sender_id)
 
 func _remove_player_from_game(player_id: int):
 	if player_id in player_game_map:
@@ -478,6 +564,14 @@ func player_eliminated(player_id: int, killer_id: int):
 func player_health_updated(player_id: int, health: float):
 	pass
 
+@rpc("authority", "reliable")
+func receive_player_count(count: int):
+	pass
+
+@rpc("authority", "reliable")
+func receive_ascended_list(players: Array):
+	pass
+
 # Chat handling
 @rpc("any_peer", "reliable")
 func send_chat_message(sender_peer_id: int, message: String):
@@ -492,7 +586,7 @@ func send_chat_message(sender_peer_id: int, message: String):
 
 # Launchpad activation handling
 @rpc("any_peer", "reliable")
-func request_activate_launchpad(sender_peer_id: int, launchpad_index: int):
+func request_activate_launchpad(launchpad_index: int):
 	var sender_id = get_multiplayer().get_remote_sender_id()
 	if sender_id in player_game_map:
 		var game_id = player_game_map[sender_id]
@@ -503,7 +597,7 @@ func request_activate_launchpad(sender_peer_id: int, launchpad_index: int):
 				rpc_id(peer_id, "activate_launchpad", launchpad_index)
 
 @rpc("any_peer", "reliable")
-func request_deactivate_launchpad(sender_peer_id: int, launchpad_index: int):
+func request_deactivate_launchpad(launchpad_index: int):
 	var sender_id = get_multiplayer().get_remote_sender_id()
 	if sender_id in player_game_map:
 		var game_id = player_game_map[sender_id]
@@ -543,6 +637,18 @@ func notify_battle_phase_started(sender_peer_id: int):
 		if game_id in games:
 			var game = games[game_id]
 			# Battle phase - no server logic needed, just for tracking
+
+# Handle player ascension (victory)
+@rpc("any_peer", "reliable")
+func notify_player_ascended(sender_peer_id: int):
+	var sender_id = get_multiplayer().get_remote_sender_id()
+	if sender_id in player_game_map:
+		var game_id = player_game_map[sender_id]
+		if game_id in games:
+			var game = games[game_id]
+			if sender_id in game.players:
+				var player_name = game.players[sender_id].name
+				_add_ascended_player(player_name)
 
 # Handle shooting
 @rpc("any_peer", "reliable")

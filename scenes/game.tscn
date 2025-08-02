@@ -72,7 +72,7 @@ offset_right = 300.0
 offset_bottom = -150.0
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 72
-text = "SPACELOOP"
+text = "STARLOOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -85,6 +85,7 @@ anchor_bottom = 0.5
 offset_left = -100.0
 offset_top = -50.0
 offset_right = 100.0
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 36
 theme_override_styles/focus = SubResource("StyleBoxFlat_u5sy4")
@@ -101,6 +102,7 @@ offset_left = -100.0
 offset_top = 20.0
 offset_right = 100.0
 offset_bottom = 70.0
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 36
 theme_override_styles/focus = SubResource("StyleBoxFlat_u5sy4")
@@ -150,7 +152,7 @@ theme_override_styles/read_only = SubResource("StyleBoxFlat_vtaks")
 theme_override_styles/normal = SubResource("StyleBoxFlat_vtaks")
 placeholder_text = "Your name..."
 alignment = 1
-max_length = 20
+max_length = 10
 
 [node name="ConfirmButton" type="Button" parent="MainMenu/NameEntryPanel"]
 layout_mode = 0
@@ -167,3 +169,51 @@ theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxFlat_kvpfn")
 text = "START"
+
+[node name="AscendedLabel" type="Label" parent="MainMenu"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 130.0
+offset_right = 200.0
+offset_bottom = 160.0
+theme_override_fonts/font = ExtResource("7_u5sy4")
+theme_override_font_sizes/font_size = 20
+text = "0 ASCENDED PLAYERS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MainMenu"]
+layout_mode = 0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = 170.0
+offset_bottom = 200.0
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="AscendedNames" type="Label" parent="MainMenu/ScrollContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_u5sy4")
+theme_override_font_sizes/font_size = 16
+
+[node name="OnlinePlayersLabel" type="Label" parent="MainMenu"]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 100.0
+offset_right = 150.0
+offset_bottom = 130.0
+theme_override_fonts/font = ExtResource("7_u5sy4")
+theme_override_font_sizes/font_size = 20
+text = "0 PLAYERS ONLINE"
+horizontal_alignment = 1
+vertical_alignment = 1
