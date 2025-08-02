@@ -43,15 +43,37 @@ func spawn_asteroid() -> void:
 	var start_position: Vector2
 	var direction: Vector2
 	
-	# Randomly choose left or right side
-	if randf() < 0.5:
-		# Spawn from left side
-		start_position = Vector2(-50, randf_range(100, viewport.size.y - 100))
-		direction = Vector2(1, randf_range(-0.5, 0.5)).normalized()
-	else:
-		# Spawn from right side
-		start_position = Vector2(viewport.size.x + 50, randf_range(100, viewport.size.y - 100))
-		direction = Vector2(-1, randf_range(-0.5, 0.5)).normalized()
+	# Keep trying spawn positions until we find one outside gravity spheres
+	var valid_spawn = false
+	var attempts = 0
+	while not valid_spawn and attempts < 10:
+		attempts += 1
+		
+		# Hard limit to ensure asteroids never spawn below ground
+		# Ground is at Y=1257, so max Y should be 1100 to give plenty of clearance
+		var max_y = 1050  # Well above ground at Y=1257
+		
+		# Randomly choose left or right side
+		if randf() < 0.5:
+			# Spawn from left side
+			start_position = Vector2(-50, randf_range(100, max_y))
+			direction = Vector2(1, randf_range(-0.5, 0.5)).normalized()
+		else:
+			# Spawn from right side
+			start_position = Vector2(viewport.size.x + 50, randf_range(100, max_y))
+			direction = Vector2(-1, randf_range(-0.5, 0.5)).normalized()
+		
+		# Check if spawn position is outside all gravity spheres
+		valid_spawn = true
+		var planets = get_tree().get_nodes_in_group("planets")
+		for planet in planets:
+			if not is_instance_valid(planet):
+				continue
+			var distance = start_position.distance_to(planet.global_position)
+			# Add extra margin (50 pixels) to ensure asteroid spawns well outside
+			if distance < planet.gravity_influence_distance + 50:
+				valid_spawn = false
+				break
 	
 	var speed = randf_range(min_speed, max_speed)
 	asteroid.initialize(start_position, direction, speed)

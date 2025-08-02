@@ -15,10 +15,15 @@ run/main_scene="uid://cer2ix1q6mbgf"
 config/features=PackedStringArray("4.4", "Mobile")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Globals="*res://globals.gd"
+
 [display]
 
 window/size/viewport_width=1200
-window/size/viewport_height=1600
+window/size/viewport_height=1400
+window/size/resizable=false
 window/handheld/orientation=1
 
 [rendering]

@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://cer2ix1q6mbgf"]
+[gd_scene load_steps=7 format=3 uid="uid://cer2ix1q6mbgf"]
 
+[ext_resource type="Script" uid="uid://dpejjskek35il" path="res://game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ground.tscn" id="2_ground"]
 [ext_resource type="PackedScene" path="res://scenes/planet_launcher.tscn" id="3_planet_launcher"]
 [ext_resource type="PackedScene" path="res://scenes/player_spaceship.tscn" id="4_player"]
@@ -7,18 +8,119 @@
 [ext_resource type="PackedScene" path="res://scenes/asteroid_spawner.tscn" id="6_asteroids"]
 
 [node name="Game" type="Node2D"]
+script = ExtResource("1_game")
 
 [node name="Ground" parent="." instance=ExtResource("2_ground")]
-position = Vector2(556, 1457)
-gravity_strength = 200.0
+position = Vector2(556, 1257)
 
 [node name="PlanetLauncher" parent="." instance=ExtResource("3_planet_launcher")]
 gravity_influence_distance = 300.0
-planet_gravity_strength = 200.0
+planet_gravity_strength = 400.0
 
 [node name="PlayerSpaceship" parent="." instance=ExtResource("4_player")]
 
 [node name="Launchpad" parent="." instance=ExtResource("5_launchpad")]
-position = Vector2(600, 1421)
+position = Vector2(600, 1221)
 
 [node name="AsteroidSpawner" parent="." instance=ExtResource("6_asteroids")]
+
+[node name="MainMenu" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1200.0
+offset_bottom = 1400.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="MainMenu"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = -150.0
+theme_override_font_sizes/font_size = 72
+text = "SPACELOOP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayButton" type="Button" parent="MainMenu"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -50.0
+offset_right = 100.0
+theme_override_font_sizes/font_size = 36
+text = "PLAY"
+
+[node name="PracticeButton" type="Button" parent="MainMenu"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 36
+text = "PRACTICE"
+
+[node name="NameEntryPanel" type="Panel" parent="MainMenu"]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 200.0
+offset_bottom = 100.0
+
+[node name="NameLabel" type="Label" parent="MainMenu/NameEntryPanel"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 24
+text = "Enter your name:"
+horizontal_alignment = 1
+
+[node name="NameInput" type="LineEdit" parent="MainMenu/NameEntryPanel"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -20.0
+offset_right = 150.0
+offset_bottom = 20.0
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Your name..."
+max_length = 20
+
+[node name="ConfirmButton" type="Button" parent="MainMenu/NameEntryPanel"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = -60.0
+offset_right = 50.0
+offset_bottom = -20.0
+theme_override_font_sizes/font_size = 20
+text = "START"

@@ -2,7 +2,7 @@ extends Node2D
 
 var ground_height: float = 3.0
 var ground_color: Color = Color.BROWN
-@export_range(0, 2000, 10) var gravity_strength: float = 500.0
+@export_range(0, 2000, 10) var gravity_strength: float = 120.0  # Reduced by 40% from 200
 var radius: float = 100.0  # For collision detection with asteroids
 
 func _ready() -> void:

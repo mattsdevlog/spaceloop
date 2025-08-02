@@ -247,9 +247,7 @@ func handle_collisions() -> void:
 			point.position.x = viewport.size.x - current_radius
 			point.old_position.x = (viewport.size.x - current_radius) - (point.old_position.x - (viewport.size.x - current_radius)) * 0.5
 		
-		if point.position.y - current_radius < 0:
-			point.position.y = current_radius
-			point.old_position.y = current_radius + (current_radius - point.old_position.y) * 0.5
+		# No top boundary - particles can go above y=0
 
 func _draw() -> void:
 	if points.size() < 3:

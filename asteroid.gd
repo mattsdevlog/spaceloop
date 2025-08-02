@@ -340,24 +340,38 @@ func check_gravity_field_collision() -> void:
 		if not is_instance_valid(planet):
 			continue
 		
-		var distance = global_position.distance_to(planet.global_position)
-		var min_distance = asteroid_radius + planet.gravity_influence_distance
+		var to_planet = planet.global_position - global_position
+		var distance = to_planet.length()
+		var gravity_radius = planet.gravity_influence_distance
 		
-		if distance < min_distance:
-			# Collision detected - bounce off!
-			var collision_normal = (global_position - planet.global_position).normalized()
+		# Check if asteroid edge is touching gravity sphere
+		var asteroid_edge_distance = distance - asteroid_radius
+		
+		# Wider detection range to prevent getting stuck
+		if asteroid_edge_distance <= gravity_radius + 5 and asteroid_edge_distance > gravity_radius - 50:
+			# We're near the edge of the gravity sphere
+			var from_planet = -to_planet.normalized()
+			var velocity_towards_planet = velocity.dot(-from_planet)
 			
-			# Separate overlapping objects
-			var overlap = min_distance - distance
-			position += collision_normal * overlap
-			
-			# Calculate bounce velocity
-			var velocity_along_normal = velocity.dot(collision_normal)
-			
-			# Only bounce if moving toward the planet
-			if velocity_along_normal < 0:
-				var restitution = 1.0  # Perfect bounce
-				velocity -= collision_normal * velocity_along_normal * (1 + restitution)
+			# Check if we're outside but moving in, or inside and need to be pushed out
+			if asteroid_edge_distance > gravity_radius and velocity_towards_planet > 0:
+				# Outside sphere, moving in - deflect
+				velocity = velocity.reflect(from_planet)
+				
+				# Add some extra velocity to ensure asteroid moves away
+				velocity += from_planet * 50
+				
+			elif asteroid_edge_distance <= gravity_radius:
+				# Inside the boundary - push out forcefully
+				var push_distance = gravity_radius - asteroid_edge_distance + 10
+				position += from_planet * push_distance
+				
+				# Ensure velocity is pointing away
+				if velocity_towards_planet > 0:
+					velocity = velocity.reflect(from_planet)
+				
+				# Add escape velocity
+				velocity += from_planet * 100
 
 func check_ground_collision() -> void:
 	var ground = get_tree().get_first_node_in_group("ground")
@@ -374,9 +388,11 @@ func check_ground_collision() -> void:
 		if velocity.y > 0:
 			velocity.y *= -1.0  # Perfect bounce
 	
-	# Also check launchpad protection arc
-	var launchpad = get_tree().get_first_node_in_group("launchpad")
-	if launchpad:
+	# Check all launchpad protection arcs
+	var launchpads = get_tree().get_nodes_in_group("launchpad")
+	for launchpad in launchpads:
+		if not is_instance_valid(launchpad):
+			continue
 		var collision_data = launchpad.check_asteroid_collision(global_position, asteroid_radius)
 		if collision_data.collided:
 			# Bounce off the arc
@@ -386,3 +402,4 @@ func check_ground_collision() -> void:
 			var velocity_along_normal = velocity.dot(collision_data.normal)
 			if velocity_along_normal < 0:
 				velocity -= collision_data.normal * velocity_along_normal * 2.0  # Perfect bounce
+			break  # Only handle one collision per frame

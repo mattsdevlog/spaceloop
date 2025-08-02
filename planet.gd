@@ -3,7 +3,7 @@ extends Node2D
 var radius: float = 50.0
 var planet_color: Color
 var gravity_influence_distance: float = 250.0  # Distance at which this planet disables ground gravity
-var gravity_strength: float = 800.0  # Gravitational pull strength
+var gravity_strength: float = 400.0  # Gravitational pull strength (reduced by half)
 var mass: float = 1.0  # Mass for gravity calculations
 
 # Fade in/out properties

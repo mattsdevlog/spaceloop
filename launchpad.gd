@@ -4,6 +4,8 @@ var launchpad_size: Vector2 = Vector2(100, 20)
 var launchpad_color: Color = Color(0.3, 0.3, 0.3)
 var active_color: Color = Color(0.5, 0.8, 0.5)
 var is_active: bool = false
+var blink_timer: float = 0.0
+var blink_on: bool = true
 var protection_radius: float = 240.0  # Radius of protective arc (doubled)
 var arc_color: Color = Color(0.7, 0.7, 1.0, 0.3)  # Semi-transparent blue
 var arc_visible: bool = false
@@ -23,22 +25,21 @@ func _draw() -> void:
 		var current_color = Color(arc_color.r, arc_color.g, arc_color.b, arc_color.a * alpha)
 		draw_animated_arc(Vector2.ZERO, protection_radius, -PI, 0, current_color, 3.0)
 	
-	var color = active_color if is_active else launchpad_color
+	var color = launchpad_color
+	if is_active:
+		color = Color.YELLOW if blink_on else launchpad_color
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
 	draw_rect(rect, color)
 	
 	# Draw border
 	draw_rect(rect, Color.WHITE, false, 2.0)
 	
-	# Draw landing indicators
-	if is_active:
-		var indicator_size = 5
-		for i in range(3):
-			var x = -30 + i * 30
-			draw_circle(Vector2(x, 0), indicator_size, Color.YELLOW)
+	# Draw landing indicators (removed - now the whole pad blinks yellow)
 
 func activate() -> void:
 	is_active = true
+	blink_timer = 0.0
+	blink_on = true
 	queue_redraw()
 
 func deactivate() -> void:
@@ -64,13 +65,16 @@ func check_asteroid_collision(asteroid_pos: Vector2, asteroid_radius: float) -> 
 	var angle = to_asteroid.angle()
 	
 	# Check if in upper hemisphere and close to arc
-	if angle >= -PI and angle <= 0 and distance - asteroid_radius < protection_radius:
-		var collision_data = {
-			"collided": true,
-			"normal": to_asteroid.normalized(),
-			"overlap": protection_radius - (distance - asteroid_radius)
-		}
-		return collision_data
+	# Add a small buffer (5 pixels) to ensure detection
+	if angle >= -PI and angle <= 0 and distance - asteroid_radius < protection_radius + 5:
+		# Check if asteroid is actually hitting the arc from outside
+		if distance - asteroid_radius <= protection_radius:
+			var collision_data = {
+				"collided": true,
+				"normal": to_asteroid.normalized(),
+				"overlap": protection_radius - (distance - asteroid_radius) + 5
+			}
+			return collision_data
 	
 	return {"collided": false}
 
@@ -105,6 +109,14 @@ func _process(delta: float) -> void:
 				arc_visible = false
 				queue_redraw()
 			arc_visibility_timer = 0
+	
+	# Update blinking if active
+	if is_active:
+		blink_timer += delta
+		if blink_timer >= 0.3:  # Blink every 0.3 seconds
+			blink_timer = 0.0
+			blink_on = not blink_on
+			queue_redraw()
 	
 	# Only redraw if arc is visible and animating
 	if arc_visible:
