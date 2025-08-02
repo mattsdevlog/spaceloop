@@ -29,7 +29,7 @@ var fuel_consumption_rate: float = 20.0  # Fuel per second when thrusting
 var fuel_recharge_rate: float = 100.0  # Fuel per second when landed
 
 # Visual properties
-var ship_color: Color = Color.WHITE
+var ship_color: Color = Color(0.996, 0.686, 0.204) # Golden yellow instead of white
 var assigned_color_index: int = -1  # Store the assigned color index for respawning
 
 # Dual rocket mode variables
@@ -244,18 +244,17 @@ func handle_input(delta: float) -> void:
 	var input_right: bool
 	var input_up: bool
 	
-	if is_multiplayer_authority() or not get_multiplayer().has_multiplayer_peer():
+	var multiplayer = get_multiplayer()
+	var has_peer = multiplayer and multiplayer.has_multiplayer_peer()
+	var is_auth = is_multiplayer_authority()
+	
+	# In practice mode or when we're the authority, use actual input
+	if is_auth or not has_peer:
 		# Local player or single player - use actual input
-		# Check if menu is visible to disable controls
-		var menu_node = get_node_or_null("/root/Game/MainMenu")
-		if menu_node and menu_node.visible:
-			input_left = false
-			input_right = false
-			input_up = false
-		else:
-			input_left = Input.is_action_pressed("ui_left")
-			input_right = Input.is_action_pressed("ui_right")
-			input_up = Input.is_action_pressed("ui_up")
+		input_left = Input.is_action_pressed("ui_left")
+		input_right = Input.is_action_pressed("ui_right")
+		input_up = Input.is_action_pressed("ui_up")
+		
 	else:
 		# Remote player - use synced inputs
 		input_left = remote_input_left
@@ -486,7 +485,9 @@ func update_physics(delta: float) -> void:
 		# Check if player is not pressing burst key
 		# Need to check if thrusting based on authority
 		var is_thrusting = false
-		if is_multiplayer_authority() or not get_multiplayer().has_multiplayer_peer():
+		var multiplayer = get_multiplayer()
+		var has_peer = multiplayer and multiplayer.has_multiplayer_peer()
+		if is_multiplayer_authority() or not has_peer:
 			is_thrusting = Input.is_action_pressed("ui_up")
 		else:
 			is_thrusting = remote_input_up
@@ -768,14 +769,14 @@ func _draw() -> void:
 	
 	if not is_shattered:
 		# Always use white color
-		var current_color = Color.WHITE
+		var current_color = Color(0.996, 0.686, 0.204)
 		
 		# Draw ship body (rectangle) as fuel gauge with square bottom
 		var body_size = Vector2(20, 60)  # Doubled height from 30 to 60
 		var body_pos = Vector2(-body_size.x / 2, -body_size.y / 2)
 		
 		# Draw empty fuel tank (dark background)
-		draw_rect(Rect2(body_pos, body_size), Color(0.2, 0.2, 0.2))
+		draw_rect(Rect2(body_pos, body_size), Color(0.086, 0, 0.208))
 		
 		# Draw fuel level
 		var fuel_percentage = current_fuel / max_fuel
@@ -784,7 +785,7 @@ func _draw() -> void:
 		var fuel_size = Vector2(body_size.x, fuel_height)
 		
 		# Always use white for fuel
-		var fuel_color = Color.WHITE
+		var fuel_color = Color(0.996, 0.686, 0.204)
 		
 		draw_rect(Rect2(fuel_pos, fuel_size), fuel_color)
 		
@@ -836,7 +837,7 @@ func _draw() -> void:
 					Vector2(-15, 42),
 					Vector2(-9, 42)
 				])
-				draw_polygon(left_flame_points, PackedColorArray([Color.WHITE]))
+				draw_polygon(left_flame_points, PackedColorArray([Color(0.996, 0.686, 0.204)]))
 			
 			if right_rocket_firing and current_fuel > 0:
 				var right_flame_points = PackedVector2Array([
@@ -844,7 +845,7 @@ func _draw() -> void:
 					Vector2(9, 42),
 					Vector2(15, 42)
 				])
-				draw_polygon(right_flame_points, PackedColorArray([Color.WHITE]))
+				draw_polygon(right_flame_points, PackedColorArray([Color(0.996, 0.686, 0.204)]))
 		
 		# Draw thrust indicator when thrusting (and have fuel) - only in single rocket mode
 		var should_show_thrust = false
@@ -861,17 +862,17 @@ func _draw() -> void:
 				Vector2(0, 40),       # Bottom tip (doubled)
 				Vector2(5, 30)        # Right (doubled)
 			])
-			draw_polygon(thrust_points, PackedColorArray([Color.WHITE]))
+			draw_polygon(thrust_points, PackedColorArray([Color(0.996, 0.686, 0.204)]))
 			
 			# Debug: Draw spawn point for smoke
 			var spawn_offset = Vector2(0, 35)  # Adjusted for taller ship
-			draw_circle(spawn_offset, 3, Color.WHITE)
+			draw_circle(spawn_offset, 3, Color(0.996, 0.686, 0.204))
 		
 		# Debug: Draw bottom corners
 		var debug_bottom_left = Vector2(-10, 30)  # Doubled
 		var debug_bottom_right = Vector2(10, 30)  # Doubled
-		draw_circle(debug_bottom_left, 2, Color.WHITE)
-		draw_circle(debug_bottom_right, 2, Color.WHITE)
+		draw_circle(debug_bottom_left, 2, Color(0.996, 0.686, 0.204))
+		draw_circle(debug_bottom_right, 2, Color(0.996, 0.686, 0.204))
 		
 		# Removed "Return to pad!" text - launchpad now blinks instead
 	else:
@@ -892,7 +893,7 @@ func _draw() -> void:
 				var body_rect = Rect2(-10, -15, 20, 30)
 				
 				# Draw empty fuel tank background
-				var dark_color = Color(0.2, 0.2, 0.2)
+				var dark_color = Color(0.086, 0, 0.208)
 				dark_color.a = piece.alpha
 				draw_rect(body_rect, dark_color, true)
 				
@@ -905,7 +906,7 @@ func _draw() -> void:
 					var fuel_rect = Rect2(-10, 15 - fuel_height, 20, fuel_height)
 					
 					# Always use white for fuel
-					var fuel_color = Color.WHITE
+					var fuel_color = Color(0.996, 0.686, 0.204)
 					fuel_color.a = piece.alpha
 					
 					draw_rect(fuel_rect, fuel_color, true)
@@ -926,7 +927,7 @@ func _draw() -> void:
 				var body_rect = Rect2(-10, -15, 20, 30)
 				
 				# Draw empty fuel tank background
-				var dark_color = Color(0.2, 0.2, 0.2)
+				var dark_color = Color(0.086, 0, 0.208)
 				dark_color.a = piece.alpha
 				draw_rect(body_rect, dark_color, true)
 				
@@ -939,7 +940,7 @@ func _draw() -> void:
 					var fuel_rect = Rect2(-10, 15 - fuel_height, 20, fuel_height)
 					
 					# Always use white for fuel
-					var fuel_color = Color.WHITE
+					var fuel_color = Color(0.996, 0.686, 0.204)
 					fuel_color.a = piece.alpha
 					
 					draw_rect(fuel_rect, fuel_color, true)

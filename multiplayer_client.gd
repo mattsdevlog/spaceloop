@@ -4,11 +4,11 @@ extends Node2D
 const SERVER_IP = "127.0.0.1"  # Change this to your server IP
 const SERVER_PORT = 8910
 
-# Player colors - all white
+# Player colors - all golden yellow
 const PLAYER_COLORS = [
-	Color.WHITE,           # Player 1
-	Color.WHITE,           # Player 2
-	Color.WHITE            # Player 3
+	Color(0.996, 0.686, 0.204),           # Player 1
+	Color(0.996, 0.686, 0.204),           # Player 2
+	Color(0.996, 0.686, 0.204)            # Player 3
 ]
 
 # Game state
@@ -67,7 +67,11 @@ func _ready():
 		return
 	
 	get_multiplayer().multiplayer_peer = peer
-	my_peer_id = get_multiplayer().get_unique_id()
+	var multiplayer = get_multiplayer()
+	if multiplayer:
+		my_peer_id = multiplayer.get_unique_id()
+	else:
+		my_peer_id = -1
 	
 	# Connect multiplayer signals
 	get_multiplayer().connected_to_server.connect(_on_connected_to_server)
@@ -90,8 +94,15 @@ func _ready():
 		worth_label.visible = false
 	if white_fade:
 		white_fade.visible = false
-		white_fade.color = Color(1, 1, 1, 0)
+		white_fade.color = Color(0.996, 0.686, 0.204, 0)
 		white_fade.z_index = 100  # Make sure it's on top
+	
+	# Set text colors to golden yellow for all labels except score_label (which should be dark purple)
+	var golden_yellow = Color(0.996, 0.686, 0.204)
+	for label in [waiting_label, player_count_label, ascend_label, 
+				  survive_label, shoot_label, congrats_label, worth_label, loop_star_label]:
+		if label:
+			label.modulate = golden_yellow
 	
 	# Store camera start position
 	if camera:
@@ -139,7 +150,21 @@ func _return_to_menu():
 	# Stop music before changing scene
 	if space_music and space_music.playing:
 		space_music.stop()
-	get_tree().change_scene_to_file("res://scenes/game.tscn")
+	
+	# Disconnect from server first
+	var multiplayer = get_multiplayer()
+	if multiplayer and multiplayer.has_multiplayer_peer():
+		multiplayer.multiplayer_peer.close()
+	
+	# Use call_deferred to ensure scene change happens at the right time
+	call_deferred("_deferred_scene_change")
+
+func _deferred_scene_change():
+	var tree = get_tree()
+	if tree:
+		tree.change_scene_to_file("res://scenes/game.tscn")
+	else:
+		push_error("Cannot change scene: get_tree() returned null")
 
 func _process(delta: float):
 	# Keep chat input focused unless exit panel is shown
@@ -238,7 +263,8 @@ func start_ascension():
 			player.set_ascension_mode()
 	
 	# Notify server to stop spawning planets
-	if get_multiplayer().has_multiplayer_peer():
+	var multiplayer = get_multiplayer()
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		rpc_id(1, "notify_ascension_started", my_peer_id)
 
 func update_ascending_camera():
@@ -391,7 +417,8 @@ func start_battle_phase():
 	survive_label.visible = true
 	
 	# Notify server about battle phase
-	if get_multiplayer().has_multiplayer_peer():
+	var multiplayer = get_multiplayer()
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		rpc_id(1, "notify_battle_phase_started", my_peer_id)
 
 func enable_battle_mode():
@@ -431,7 +458,8 @@ func start_victory_sequence():
 		congrats_label.visible = true
 	
 	# Notify server if we are the winner
-	if winner_id == my_peer_id and get_multiplayer().has_multiplayer_peer():
+	var multiplayer = get_multiplayer()
+	if winner_id == my_peer_id and multiplayer and multiplayer.has_multiplayer_peer():
 		rpc_id(1, "notify_player_ascended", my_peer_id)
 
 # RPC to server (defined for clarity)
@@ -722,9 +750,7 @@ func player_health_updated(player_id: int, health: float):
 			player.set_health(health)
 
 func _on_exit_yes_pressed():
-	# Disconnect from server and return to menu
-	if get_multiplayer().has_multiplayer_peer():
-		get_multiplayer().multiplayer_peer.close()
+	# Return to menu (disconnection is handled in _return_to_menu)
 	_return_to_menu()
 
 func _on_exit_no_pressed():

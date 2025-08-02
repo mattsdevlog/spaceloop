@@ -77,4 +77,4 @@ func _draw() -> void:
 	var font = ThemeDB.fallback_font
 	var score_text = "Score: " + str(score)
 	var text_pos = Vector2(-50, -80)  # Position above launcher
-	draw_string(font, text_pos, score_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 24, Color.WHITE)
+	draw_string(font, text_pos, score_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 24, Color(0.996, 0.686, 0.204))

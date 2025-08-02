@@ -1,13 +1,13 @@
 extends Node2D
 
 var launchpad_size: Vector2 = Vector2(100, 20)
-var launchpad_color: Color = Color.WHITE
-var active_color: Color = Color.WHITE
+var launchpad_color: Color = Color(0.996, 0.686, 0.204)
+var active_color: Color = Color(0.996, 0.686, 0.204)
 var is_active: bool = false
 var blink_timer: float = 0.0
 var blink_on: bool = true
 var protection_radius: float = 240.0  # Radius of protective arc (doubled)
-var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # Semi-transparent white
+var arc_color: Color = Color(0.996, 0.686, 0.204, 0.3)  # Semi-transparent golden yellow
 var arc_visible: bool = false
 var arc_visibility_timer: float = 0.0
 var arc_fade_time: float = 0.5  # Time to fade out after no asteroids nearby
@@ -28,15 +28,15 @@ func _draw() -> void:
 	
 	var color = launchpad_color
 	if is_active:
-		color = Color.WHITE if blink_on else Color.BLACK
+		color = Color(0.996, 0.686, 0.204) if blink_on else Color(0.086, 0, 0.208)
 	else:
 		# When not active, always show as white (not blinking)
-		color = Color.WHITE
+		color = Color(0.996, 0.686, 0.204)
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
 	draw_rect(rect, color)
 	
 	# Draw border
-	draw_rect(rect, Color.WHITE, false, 2.0)
+	draw_rect(rect, Color(0.996, 0.686, 0.204), false, 2.0)
 	
 	# Draw landing indicators (removed - now the whole pad blinks yellow)
 

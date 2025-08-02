@@ -25,5 +25,5 @@ func _draw():
 	# Draw the name centered
 	var text_height = font.get_height(font_size)
 	var text_pos = Vector2(-total_width/2, text_height/2 - 2)
-	var text_color = Color(1, 1, 1, 1)
+	var text_color = Color(0.996, 0.686, 0.204, 1)
 	draw_string(font, text_pos, player_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color)

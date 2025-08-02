@@ -4,7 +4,7 @@ var initial_velocity: Vector2 = Vector2.ZERO
 var lifetime: float = 3.0
 var age: float = 0.0
 var radius: float = 10.0
-var smoke_color: Color = Color.WHITE
+var smoke_color: Color = Color(0.996, 0.686, 0.204)
 
 func _ready() -> void:
 	# Set up physics properties for jelly-like behavior
@@ -51,4 +51,4 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, radius, smoke_color)
 	
 	# Draw a subtle outline for definition
-	draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(0.9, 0.9, 0.9, smoke_color.a), 1.0)
+	draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(0.8, 0.549, 0.163, smoke_color.a), 1.0)

@@ -7,11 +7,8 @@ var player_name: String = ""
 var current_menu_index: int = 0
 var menu_buttons: Array = []
 var online_players_label: Label
-var ascended_label: Label
-var ascended_names: Label
-var scroll_container: ScrollContainer
-var scroll_speed: float = 50.0
-var scroll_position: float = 0.0
+var ascended_label: RichTextLabel
+var ascended_names_list: Label
 var ascended_list: Array = []
 var looking_for_server: bool = false
 var looking_dots_timer: float = 0.0
@@ -23,8 +20,7 @@ func _ready() -> void:
 	main_menu = $MainMenu
 	online_players_label = $MainMenu/OnlinePlayersLabel
 	ascended_label = $MainMenu/AscendedLabel
-	ascended_names = $MainMenu/ScrollContainer/AscendedNames
-	scroll_container = $MainMenu/ScrollContainer
+	ascended_names_list = $MainMenu/AscendedNamesList
 	
 	# Set up menu buttons array
 	menu_buttons = [$MainMenu/PlayButton, $MainMenu/PracticeButton]
@@ -65,6 +61,14 @@ func _ready() -> void:
 	add_child(refresh_timer)
 	refresh_timer.start()
 	
+	# Set golden yellow color for all UI text
+	var golden_yellow = Color(0.996, 0.686, 0.204)
+	for node in [$MainMenu/TitleLabel, $MainMenu/OnlinePlayersLabel, 
+				 $MainMenu/AscendedLabel, $MainMenu/AscendedNamesList,
+				 $MainMenu/NameEntryPanel/NameLabel]:
+		if node:
+			node.modulate = golden_yellow
+	
 	#print("Menu ready, buttons connected")
 
 func _on_play_pressed() -> void:
@@ -73,6 +77,9 @@ func _on_play_pressed() -> void:
 	$MainMenu/PlayButton.visible = false
 	$MainMenu/PracticeButton.visible = false
 	$MainMenu/TitleLabel.visible = false
+	online_players_label.visible = false
+	ascended_label.visible = false
+	ascended_names_list.visible = false
 	$MainMenu/NameEntryPanel.visible = true
 	
 	# Clear any existing text
@@ -83,15 +90,23 @@ func _on_play_pressed() -> void:
 	
 	# Defer the focus grab to avoid Enter key propagation
 	$MainMenu/NameEntryPanel/NameInput.call_deferred("grab_focus")
+	
+	# Also hide cursor  
+	var name_input = $MainMenu/NameEntryPanel/NameInput
+	name_input.set_caret_column(0)
+	name_input.deselect()
 
 func _on_practice_pressed() -> void:
 	#print("Practice button pressed")
 	practice_mode = true
 	
 	# Disconnect from server before starting practice mode
-	if connected_to_server and get_multiplayer().has_multiplayer_peer():
+	if get_multiplayer().has_multiplayer_peer():
 		get_multiplayer().multiplayer_peer.close()
-		connected_to_server = false
+		
+	# Set multiplayer peer to null for true offline mode
+	get_multiplayer().multiplayer_peer = null
+	connected_to_server = false
 	
 	start_game()
 
@@ -103,10 +118,15 @@ func start_game() -> void:
 	
 	# Show game elements
 	$PlayerSpaceship.visible = true
+	$PlayerSpaceship.set_process(true)  # Ensure processing is enabled
 	$Launchpad.visible = true
 	$PlanetLauncher.visible = true
 	$PlanetLauncher.set_process(true)  # Start planet spawning
 	$AsteroidSpawner.set_process(true)
+	
+	# Set player name for practice mode
+	if practice_mode and player_name != "":
+		$PlayerSpaceship.player_name = player_name
 	
 	# Both practice and normal mode now have planets and asteroids
 	
@@ -149,6 +169,21 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE and practice_mode and game_started:
 			return_to_menu()
+			return
+	
+	# Handle ESC in name entry panel
+	if event is InputEventKey and event.pressed:
+		if $MainMenu/NameEntryPanel.visible and event.keycode == KEY_ESCAPE:
+			# Return to main menu
+			$MainMenu/NameEntryPanel.visible = false
+			$MainMenu/PlayButton.visible = true
+			$MainMenu/PracticeButton.visible = true
+			$MainMenu/TitleLabel.visible = true
+			online_players_label.visible = true
+			ascended_label.visible = true
+			# ascended_names_list visibility is handled by _update_ascended_display
+			_update_ascended_display()
+			menu_buttons[0].grab_focus()
 			return
 	
 	# Only handle menu navigation if menu is visible and name panel is not
@@ -205,10 +240,21 @@ func return_to_menu() -> void:
 	$MainMenu/PracticeButton.visible = true
 	$MainMenu/TitleLabel.visible = true
 	$MainMenu/NameEntryPanel.visible = false
+	online_players_label.visible = true
+	ascended_label.visible = true
+	# ascended_names_list visibility is handled by _update_ascended_display
 	
 	# Reset button focus
 	current_menu_index = 0
 	menu_buttons[0].grab_focus()
+	
+	# Set golden yellow color for all UI text
+	var golden_yellow = Color(0.996, 0.686, 0.204)
+	for node in [$MainMenu/TitleLabel, $MainMenu/OnlinePlayersLabel, 
+				 $MainMenu/AscendedLabel, $MainMenu/AscendedNamesList,
+				 $MainMenu/NameEntryPanel/NameLabel]:
+		if node:
+			node.modulate = golden_yellow
 	
 	# Reconnect to server to be counted as online again
 	_connect_to_server()
@@ -262,20 +308,25 @@ func _on_http_request_completed(result: int, response_code: int, headers: Packed
 func _update_ascended_display():
 	var count = ascended_list.size()
 	if count == 1:
-		ascended_label.text = "1 ASCENDED PLAYER"
+		ascended_label.text = "[center]1 ASCENDED PLAYER[/center]"
 	else:
-		ascended_label.text = "%d ASCENDED PLAYERS" % count
+		ascended_label.text = "[center]%d ASCENDED PLAYERS[/center]" % count
 	
+	# Update the names list
 	if count > 0:
-		# Create scrolling text with player names
-		var names_text = "   "  # Start with some padding
-		for name in ascended_list:
-			names_text += name + "   •   "
-		names_text += names_text  # Duplicate for seamless scrolling
-		ascended_names.text = names_text
-		scroll_container.visible = true
+		var names_text = ""
+		for i in range(min(count, 10)):  # Show up to 10 names
+			if i > 0:
+				names_text += "\n"  # Add line break between names
+			names_text += ascended_list[i]
+		
+		if count > 10:
+			names_text += "\n..."  # Add ellipsis on new line if there are more than 10
+		
+		ascended_names_list.text = names_text
+		ascended_names_list.visible = true
 	else:
-		scroll_container.visible = false
+		ascended_names_list.visible = false
 
 func _process(delta: float) -> void:
 	# Handle animated dots for "LOOKING FOR SERVER"
@@ -285,28 +336,13 @@ func _process(delta: float) -> void:
 			looking_dots_timer = 0.0
 			looking_dots_count = (looking_dots_count + 1) % 4  # Cycle through 0, 1, 2, 3
 			_update_looking_text()
-	
-	# Handle scrolling of ascended names
-	if scroll_container and scroll_container.visible and ascended_names.text != "":
-		scroll_position += scroll_speed * delta
-		
-		# Reset scroll position for seamless loop
-		var text_width = ascended_names.get_theme_font("font").get_string_size(
-			ascended_names.text.substr(0, ascended_names.text.length() / 2),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 
-			ascended_names.get_theme_font_size("font_size")
-		).x
-		
-		if scroll_position > text_width:
-			scroll_position -= text_width
-		
-		scroll_container.scroll_horizontal = int(scroll_position)
 
 func _update_looking_text():
 	var dots = ""
 	for i in range(looking_dots_count):
 		dots += "."
-	ascended_label.text = "LOOKING FOR SERVER" + dots
+	ascended_label.text = "[center]LOOKING FOR SERVER" + dots + "[/center]"
+	ascended_names_list.visible = false  # Hide names when looking for server
 
 func _connect_to_server():
 	# Connect to game server just to be counted as online

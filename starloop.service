@@ -1,0 +1,14 @@
+[Unit]
+Description=Starloop Game Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/starloop
+ExecStart=/usr/local/bin/godot --headless --main-pack server.pck
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

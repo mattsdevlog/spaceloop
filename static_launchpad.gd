@@ -2,7 +2,7 @@ extends Node2D
 
 var launchpad_size: Vector2 = Vector2(100, 20)
 var protection_radius: float = 240.0
-var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)
+var arc_color: Color = Color(0.996, 0.686, 0.204, 0.3)
 var arc_visible: bool = false
 var arc_visibility_timer: float = 0.0
 var arc_fade_time: float = 0.5
@@ -41,7 +41,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	if visible:
-		var color = Color.WHITE if blink_on else Color.BLACK
+		var color = Color(0.996, 0.686, 0.204) if blink_on else Color(0.086, 0, 0.208)
 		var rect = Rect2(-50, -10, 100, 20)
 		draw_rect(rect, color)
 """
@@ -82,10 +82,10 @@ func _draw() -> void:
 		var current_color = Color(arc_color.r, arc_color.g, arc_color.b, arc_color.a * alpha)
 		draw_animated_arc(Vector2.ZERO, protection_radius, -PI, 0, current_color, 3.0)
 	
-	# Always draw base launchpad as white
+	# Always draw base launchpad as golden yellow
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
-	draw_rect(rect, Color.WHITE)
-	draw_rect(rect, Color.WHITE, false, 2.0)
+	draw_rect(rect, Color(0.996, 0.686, 0.204))
+	draw_rect(rect, Color(0.996, 0.686, 0.204), false, 2.0)
 
 func activate() -> void:
 	is_active = true

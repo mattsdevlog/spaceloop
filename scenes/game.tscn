@@ -9,29 +9,29 @@
 [ext_resource type="FontFile" uid="uid://c7dq0mtmhueh4" path="res://assets/ConnectionBold-ER1g.otf" id="7_u5sy4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u5sy4"]
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(0.996, 0.686, 0.204, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gee14"]
 draw_center = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0tnpc"]
-bg_color = Color(0, 0, 0, 1)
+bg_color = Color(0.086, 0, 0.208, 1)
 border_width_left = 5
 border_width_top = 5
 border_width_right = 5
 border_width_bottom = 5
-border_color = Color(1, 1, 1, 1)
+border_color = Color(0.996, 0.686, 0.204, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vtaks"]
 draw_center = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kvpfn"]
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(0.996, 0.686, 0.204, 1)
 border_width_left = 5
 border_width_top = 5
 border_width_right = 5
 border_width_bottom = 5
-border_color = Color(0, 0, 0, 1)
+border_color = Color(0.086, 0, 0.208, 1)
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -72,7 +72,7 @@ offset_right = 300.0
 offset_bottom = -150.0
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 72
-text = "STARLOOP"
+text = "STARLOOP ONLINE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -85,7 +85,8 @@ anchor_bottom = 0.5
 offset_left = -100.0
 offset_top = -50.0
 offset_right = 100.0
-theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.996, 0.686, 0.204, 1)
+theme_override_colors/font_focus_color = Color(0.086, 0, 0.208, 1)
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 36
 theme_override_styles/focus = SubResource("StyleBoxFlat_u5sy4")
@@ -102,7 +103,8 @@ offset_left = -100.0
 offset_top = 20.0
 offset_right = 100.0
 offset_bottom = 70.0
-theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.996, 0.686, 0.204, 1)
+theme_override_colors/font_focus_color = Color(0.086, 0, 0.208, 1)
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 36
 theme_override_styles/focus = SubResource("StyleBoxFlat_u5sy4")
@@ -111,6 +113,7 @@ text = "PRACTICE"
 
 [node name="NameEntryPanel" type="Panel" parent="MainMenu"]
 visible = false
+z_index = 10
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -145,12 +148,12 @@ offset_left = -150.0
 offset_top = -20.0
 offset_right = 150.0
 offset_bottom = 20.0
+theme_override_colors/caret_color = Color(0, 0, 0, 0)
 theme_override_fonts/font = ExtResource("7_u5sy4")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/focus = SubResource("StyleBoxFlat_vtaks")
 theme_override_styles/read_only = SubResource("StyleBoxFlat_vtaks")
 theme_override_styles/normal = SubResource("StyleBoxFlat_vtaks")
-placeholder_text = "Your name..."
 alignment = 1
 max_length = 10
 
@@ -164,42 +167,42 @@ offset_left = -50.0
 offset_top = -60.0
 offset_right = 50.0
 offset_bottom = -20.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.086, 0, 0.208, 1)
 theme_override_fonts/font = ExtResource("7_u5sy4")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_kvpfn")
 text = "START"
 
-[node name="AscendedLabel" type="Label" parent="MainMenu"]
+[node name="AscendedLabel" type="RichTextLabel" parent="MainMenu"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = 130.0
-offset_right = 200.0
-offset_bottom = 160.0
-theme_override_fonts/font = ExtResource("7_u5sy4")
-theme_override_font_sizes/font_size = 20
-text = "0 ASCENDED PLAYERS"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_left = -600.0
+offset_top = 150.0
+offset_right = 600.0
+offset_bottom = 180.0
+theme_override_fonts/normal_font = ExtResource("7_u5sy4")
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+text = "[center][u]0 ASCENDED PLAYERS[/u][/center]"
+fit_content = true
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MainMenu"]
+[node name="AscendedNamesList" type="Label" parent="MainMenu"]
 layout_mode = 0
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_top = 170.0
-offset_bottom = 200.0
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 0
-
-[node name="AscendedNames" type="Label" parent="MainMenu/ScrollContainer"]
-layout_mode = 2
+offset_left = -600.0
+offset_top = 185.0
+offset_right = 600.0
+offset_bottom = 270.0
 theme_override_fonts/font = ExtResource("7_u5sy4")
 theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="OnlinePlayersLabel" type="Label" parent="MainMenu"]
 visible = false
@@ -208,12 +211,12 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
+offset_left = -600.0
 offset_top = 100.0
-offset_right = 150.0
+offset_right = 600.0
 offset_bottom = 130.0
 theme_override_fonts/font = ExtResource("7_u5sy4")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 text = "0 PLAYERS ONLINE"
 horizontal_alignment = 1
 vertical_alignment = 1

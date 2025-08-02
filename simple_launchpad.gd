@@ -6,7 +6,7 @@ var blink_visible: bool = true
 var is_blinking: bool = false
 var scored: bool = false  # Track if player has scored
 var protection_radius: float = 240.0
-var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)
+var arc_color: Color = Color(0.996, 0.686, 0.204, 0.3)
 var arc_visible: bool = false
 var arc_visibility_timer: float = 0.0
 var detection_radius: float = 400.0
@@ -57,10 +57,10 @@ func _draw() -> void:
 		var current_color = Color(arc_color.r, arc_color.g, arc_color.b, arc_color.a * alpha)
 		draw_animated_arc(Vector2.ZERO, protection_radius, -PI, 0, current_color, 3.0)
 	
-	# Always draw as white
+	# Always draw as golden yellow
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
-	draw_rect(rect, Color.WHITE)
-	draw_rect(rect, Color.WHITE, false, 2.0)
+	draw_rect(rect, Color(0.996, 0.686, 0.204))
+	draw_rect(rect, Color(0.996, 0.686, 0.204), false, 2.0)
 
 func activate() -> void:
 	#print("[LAUNCHPAD] activate() called, scored=", scored, " is_blinking=", is_blinking)

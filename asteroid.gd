@@ -6,7 +6,7 @@ var rotation_speed: float = 0.0
 var asteroid_radius: float = 30.0
 var original_radius: float = 30.0  # Store original size
 var polygon_points: PackedVector2Array = PackedVector2Array()
-var asteroid_color: Color = Color.WHITE
+var asteroid_color: Color = Color(0.996, 0.686, 0.204)
 var mass: float = 1.0  # For collision response
 var is_fragment: bool = false  # Prevent fragments from creating more fragments
 

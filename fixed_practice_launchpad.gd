@@ -5,7 +5,7 @@ var is_active: bool = false
 var blink_timer: float = 0.0
 var show_white: bool = true  # true = white, false = black
 var protection_radius: float = 240.0
-var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)
+var arc_color: Color = Color(0.996, 0.686, 0.204, 0.3)
 var arc_visible: bool = false
 var arc_visibility_timer: float = 0.0
 var arc_fade_time: float = 0.5
@@ -68,12 +68,12 @@ func _draw() -> void:
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
 	
 	# Draw based on state
-	var pad_color = Color.WHITE
+	var pad_color = Color(0.996, 0.686, 0.204)
 	if is_active and not force_stop_blinking:
-		pad_color = Color.WHITE if show_white else Color.BLACK
+		pad_color = Color(0.996, 0.686, 0.204) if show_white else Color(0.086, 0, 0.208)
 	
 	draw_rect(rect, pad_color)
-	draw_rect(rect, Color.WHITE, false, 2.0)
+	draw_rect(rect, Color(0.996, 0.686, 0.204), false, 2.0)
 
 func activate() -> void:
 	is_active = true

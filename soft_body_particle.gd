@@ -13,7 +13,7 @@ var pressure: float = 80.0  # Not used anymore but kept for compatibility
 var initial_velocity: Vector2 = Vector2.ZERO
 var lifetime: float = 3.0
 var age: float = 0.0
-var particle_color: Color = Color.WHITE
+var particle_color: Color = Color(0.996, 0.686, 0.204)
 
 # Animation phases
 var grow_time: float = 0.2  # Time to grow to full size

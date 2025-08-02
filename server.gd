@@ -1,7 +1,7 @@
 extends Node2D
 
 # Server configuration
-const PORT = 8910
+var PORT = 8910
 const MAX_PLAYERS = 3
 
 # Game state
@@ -31,6 +31,14 @@ class PlayerData:
 		color_index = color
 
 func _ready():
+	# Check for Railway PORT environment variable
+	var env_port = OS.get_environment("PORT")
+	if env_port != "":
+		PORT = int(env_port)
+		print("Using Railway assigned port: ", PORT)
+	else:
+		print("Using default port: ", PORT)
+	
 	#print("Starting dedicated server on port ", PORT)
 	
 	# Create multiplayer peer

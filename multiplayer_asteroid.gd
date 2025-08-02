@@ -5,7 +5,7 @@ var velocity: Vector2 = Vector2.ZERO
 var rotation_speed: float = 0.0
 var asteroid_radius: float = 30.0
 var polygon_points: PackedVector2Array = PackedVector2Array()
-var asteroid_color: Color = Color.WHITE
+var asteroid_color: Color = Color(0.996, 0.686, 0.204)
 
 # For smooth interpolation
 var target_position: Vector2 = Vector2.ZERO
@@ -96,7 +96,7 @@ func _draw() -> void:
 		# Draw outline only - no fill
 		for i in range(polygon_points.size()):
 			var next = (i + 1) % polygon_points.size()
-			draw_line(polygon_points[i], polygon_points[next], Color.WHITE, 2.0)
+			draw_line(polygon_points[i], polygon_points[next], Color(0.996, 0.686, 0.204), 2.0)
 
 func get_radius() -> float:
 	return asteroid_radius

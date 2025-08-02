@@ -291,7 +291,7 @@ func _draw() -> void:
 		
 		# Draw main body
 		var body_rect = Rect2(-body_width/2, -body_height/2, body_width, body_height)
-		draw_rect(body_rect, Color(0.2, 0.2, 0.2))
+		draw_rect(body_rect, Color(0.086, 0, 0.208))
 		
 		# Draw fuel level in body
 		var fuel_percentage = current_fuel / max_fuel
@@ -335,7 +335,7 @@ func _draw() -> void:
 		# Draw score
 		var font = ThemeDB.fallback_font
 		var score_text = "Score: " + str(score)
-		draw_string(font, Vector2(-30, -40), score_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 20, Color.WHITE)
+		draw_string(font, Vector2(-30, -40), score_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 20, Color(0.996, 0.686, 0.204))
 		
 		if pending_score:
 			draw_string(font, Vector2(-50, -60), "Return to pad!", HORIZONTAL_ALIGNMENT_CENTER, -1, 16, Color.YELLOW)

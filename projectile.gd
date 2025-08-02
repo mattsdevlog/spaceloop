@@ -48,8 +48,8 @@ func _physics_process(delta: float):
 
 func _draw():
 	# Draw a simple white circle projectile
-	draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
-	draw_circle(Vector2.ZERO, 2.0, Color.WHITE)
+	draw_circle(Vector2.ZERO, 3.0, Color(0.996, 0.686, 0.204))
+	draw_circle(Vector2.ZERO, 2.0, Color(0.996, 0.686, 0.204))
 
 func _on_area_entered(area):
 	# Not used - spaceships are Node2D not Area2D

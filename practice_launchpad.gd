@@ -1,13 +1,13 @@
 extends Node2D
 
 var launchpad_size: Vector2 = Vector2(100, 20)
-var launchpad_color: Color = Color.WHITE
+var launchpad_color: Color = Color(0.996, 0.686, 0.204)
 var is_active: bool = false
 var blink_timer: float = 0.0
 var blink_on: bool = true
 var has_deactivated: bool = false  # Track if we've deactivated after scoring
 var protection_radius: float = 240.0  # Radius of protective arc (doubled)
-var arc_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # Semi-transparent white
+var arc_color: Color = Color(0.996, 0.686, 0.204, 0.3)  # Semi-transparent golden yellow
 var arc_visible: bool = false
 var arc_visibility_timer: float = 0.0
 var arc_fade_time: float = 0.5  # Time to fade out after no asteroids nearby
@@ -28,21 +28,21 @@ func _draw() -> void:
 		draw_animated_arc(Vector2.ZERO, protection_radius, -PI, 0, current_color, 3.0)
 	
 	# Draw launchpad with blinking when active
-	var color = Color.WHITE
+	var color = Color(0.996, 0.686, 0.204)
 	if is_active and not has_deactivated:
 		if blink_on:
-			color = Color.WHITE
+			color = Color(0.996, 0.686, 0.204)
 		else:
-			color = Color.BLACK
+			color = Color(0.086, 0, 0.208)
 	else:
-		# Not active or has deactivated - always white
-		color = Color.WHITE
+		# Not active or has deactivated - always golden yellow
+		color = Color(0.996, 0.686, 0.204)
 	
 	var rect = Rect2(-launchpad_size.x / 2, -launchpad_size.y / 2, launchpad_size.x, launchpad_size.y)
 	draw_rect(rect, color)
 	
 	# Draw border
-	draw_rect(rect, Color.WHITE, false, 2.0)
+	draw_rect(rect, Color(0.996, 0.686, 0.204), false, 2.0)
 	
 
 func is_spaceship_on_pad(spaceship_pos: Vector2) -> bool:

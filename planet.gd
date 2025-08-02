@@ -30,8 +30,8 @@ func _ready() -> void:
 	# Add to planets group
 	add_to_group("planets")
 	
-	# Set to white
-	planet_color = Color.WHITE
+	# Set to golden yellow
+	planet_color = Color(0.996, 0.686, 0.204)
 	queue_redraw()
 
 func initialize(initial_radius: float) -> void:
@@ -152,16 +152,16 @@ func draw_squiggly_arc(center: Vector2, radius: float, start_angle: float, arc_l
 
 func _draw() -> void:
 	# Apply alpha to colors
-	var draw_color = Color(1, 1, 1, current_alpha)  # White with alpha
-	var outline_color = Color(0.8, 0.8, 0.8, current_alpha)  # Slightly darker white for outline
-	var influence_color = Color(1, 1, 1, 0.1 * current_alpha)  # White with low alpha
+	var draw_color = Color(0.996, 0.686, 0.204, current_alpha)  # Golden yellow with alpha
+	var outline_color = Color(0.8, 0.549, 0.163, current_alpha)  # Slightly darker golden for outline
+	var influence_color = Color(0.996, 0.686, 0.204, 0.1 * current_alpha)  # Golden yellow with low alpha
 	
 	# Draw the planet circle
 	draw_circle(Vector2.ZERO, radius, draw_color)
 	
 	# Draw orbit progress indicator - always show if there's progress
 	if orbit_progress > 0 and not has_been_orbited:
-		var progress_color = Color.WHITE
+		var progress_color = Color(0.996, 0.686, 0.204)
 		progress_color.a = current_alpha
 		var arc_radius = radius + 15  # Slightly outside the planet
 		var arc_width = 8.0  # Thick border
