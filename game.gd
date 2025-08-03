@@ -8,7 +8,7 @@ var current_menu_index: int = 0
 var menu_buttons: Array = []
 var online_players_label: Label
 var ascended_label: RichTextLabel
-var ascended_names_list: Label
+var ascended_names_list: RichTextLabel
 var ascended_list: Array = []
 var looking_for_server: bool = false
 var looking_dots_timer: float = 0.0
@@ -314,63 +314,18 @@ func _update_ascended_display():
 	else:
 		ascended_label.text = "[center]%d ASCENDED PLAYERS[/center]" % count
 	
-	# Update the names list
+	# Update the names list as one continuous string
 	if count > 0:
-		# Calculate columns needed (15 names per column)
-		var names_per_column = 15
-		var num_columns = ceil(float(count) / names_per_column)
-		
-		# Create columns of names
-		var columns = []
-		for col in range(num_columns):
-			columns.append([])
-		
-		# Distribute names into columns
-		for i in range(count):
-			var col_index = i / names_per_column
-			columns[col_index].append(ascended_list[i])
-		
-		# Find the longest name for consistent column width
-		var max_name_length = 0
-		for name in ascended_list:
-			max_name_length = max(max_name_length, name.length())
-		
-		# Build the display text with columns
 		var names_text = ""
-		var column_spacing = "        "  # 8 spaces between columns for better separation
+		var separator = "  -  "  # 2 spaces, dash, 2 spaces for more compact display
 		
-		# Process row by row to create side-by-side columns
-		var max_rows = 0
-		for col in columns:
-			max_rows = max(max_rows, col.size())
+		for i in range(count):
+			if i > 0:
+				names_text += separator
+			names_text += ascended_list[i]
 		
-		for row in range(max_rows):
-			var row_text = ""
-			for col_idx in range(num_columns):
-				if row < columns[col_idx].size():
-					var name = columns[col_idx][row]
-					# Center-pad each name within its column width
-					var padding_needed = max_name_length - name.length()
-					var left_pad = padding_needed / 2
-					var right_pad = padding_needed - left_pad
-					var padded_name = " ".repeat(left_pad) + name + " ".repeat(right_pad)
-					row_text += padded_name
-				else:
-					# Empty space for this column
-					row_text += " ".repeat(max_name_length)
-				
-				if col_idx < num_columns - 1:
-					row_text += column_spacing
-			
-			if names_text != "":
-				names_text += "\n"
-			names_text += row_text
-		
-		ascended_names_list.text = names_text
+		ascended_names_list.text = "[center]" + names_text + "[/center]"
 		ascended_names_list.visible = true
-		
-		# Reset vertical position since we're showing columns side by side
-		ascended_names_list.position.y = 185
 	else:
 		ascended_names_list.visible = false
 
