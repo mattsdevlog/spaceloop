@@ -10,21 +10,6 @@ var player_game_map = {}  # Dictionary of player_id -> game_id
 var status_connections = []  # List of peer_ids that are just checking status
 var ascended_players = []  # List of player names who have won
 
-func _init():
-	# Add 50 test names for testing the display
-	var test_names = [
-		"ALICE", "BOB", "CHARLIE", "DAVID", "EVE",
-		"FRANK", "GRACE", "HENRY", "IRIS", "JACK",
-		"KAREN", "LIAM", "MIA", "NOAH", "OLIVIA",
-		"PETER", "QUINN", "ROSE", "SAM", "TARA",
-		"ULYSSES", "VERA", "WALTER", "XENA", "YUKI",
-		"ZARA", "AARON", "BELLA", "CARLOS", "DIANA",
-		"ETHAN", "FIONA", "GEORGE", "HANNAH", "IAN",
-		"JULIA", "KEVIN", "LUNA", "MASON", "NORA",
-		"OSCAR", "PENNY", "QUENTIN", "RUBY", "STEVE",
-		"TINA", "URSULA", "VICTOR", "WENDY", "XAVIER"
-	]
-	ascended_players = test_names
 var all_connected_peers = []  # List of all connected peer IDs
 const ASCENDED_FILE = "user://ascended_players.txt"
 
