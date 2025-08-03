@@ -45,11 +45,13 @@ class PlayerData:
 func _ready():
 	#print("Starting dedicated server on port ", PORT)
 	
-	# Create multiplayer peer
-	var peer = ENetMultiplayerPeer.new()
-	# Bind to IPv4 explicitly (0.0.0.0 means all IPv4 interfaces)
-	peer.set_bind_ip("0.0.0.0")
-	var error = peer.create_server(PORT, MAX_PLAYERS * 10)  # Allow multiple games
+	# Create multiplayer peer - Use WebSocket for web compatibility
+	var peer
+	var error
+	
+	# Use WebSocket server to support both native and HTML5 clients
+	peer = WebSocketMultiplayerPeer.new()
+	error = peer.create_server(PORT)  # WebSocket on same port
 	
 	if error != OK:
 		print("Failed to create server on port ", PORT, ": ", error)

@@ -348,8 +348,8 @@ func _update_looking_text():
 func _connect_to_server():
 	# Connect to game server just to be counted as online
 	if not connected_to_server:
-		var peer = ENetMultiplayerPeer.new()
-		var error = peer.create_client("35.188.127.102", 8910)
+		var peer = WebSocketMultiplayerPeer.new()
+		var error = peer.create_client("ws://35.188.127.102:8910")
 		
 		if error == OK:
 			get_multiplayer().multiplayer_peer = peer

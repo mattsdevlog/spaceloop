@@ -58,9 +58,10 @@ func _ready():
 	print("Multiplayer game starting...")
 	print("Attempting to connect to server at ", SERVER_IP, ":", SERVER_PORT)
 	
-	# Connect to server
-	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_client(SERVER_IP, SERVER_PORT)
+	# Connect to server using WebSocket (works for both native and HTML5)
+	var peer = WebSocketMultiplayerPeer.new()
+	var url = "ws://" + SERVER_IP + ":" + str(SERVER_PORT)
+	var error = peer.create_client(url)
 	
 	if error != OK:
 		print("Failed to create client: ", error)
