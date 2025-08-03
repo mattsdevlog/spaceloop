@@ -309,7 +309,6 @@ func _on_http_request_completed(result: int, response_code: int, headers: Packed
 
 func _update_ascended_display():
 	var count = ascended_list.size()
-	print("Updating ascended display with ", count, " players")
 	if count == 1:
 		ascended_label.text = "[center]1 ASCENDED PLAYER[/center]"
 	else:
@@ -338,35 +337,40 @@ func _update_ascended_display():
 		
 		# Build the display text with columns
 		var names_text = ""
-		var column_spacing = "    "  # 4 spaces between columns
+		var column_spacing = "        "  # 8 spaces between columns for better separation
 		
-		# Process row by row
-		for row in range(names_per_column):
+		# Process row by row to create side-by-side columns
+		var max_rows = 0
+		for col in columns:
+			max_rows = max(max_rows, col.size())
+		
+		for row in range(max_rows):
 			var row_text = ""
 			for col_idx in range(num_columns):
 				if row < columns[col_idx].size():
 					var name = columns[col_idx][row]
-					# Pad name to ensure consistent column width
-					var padded_name = name
-					while padded_name.length() < max_name_length:
-						padded_name += " "
+					# Center-pad each name within its column width
+					var padding_needed = max_name_length - name.length()
+					var left_pad = padding_needed / 2
+					var right_pad = padding_needed - left_pad
+					var padded_name = " ".repeat(left_pad) + name + " ".repeat(right_pad)
 					row_text += padded_name
-					if col_idx < num_columns - 1:
-						row_text += column_spacing
+				else:
+					# Empty space for this column
+					row_text += " ".repeat(max_name_length)
+				
+				if col_idx < num_columns - 1:
+					row_text += column_spacing
 			
-			if row_text.strip_edges() != "":  # Only add non-empty rows
-				if names_text != "":
-					names_text += "\n"
-				names_text += row_text.strip_edges()  # Remove trailing spaces
+			if names_text != "":
+				names_text += "\n"
+			names_text += row_text
 		
 		ascended_names_list.text = names_text
 		ascended_names_list.visible = true
 		
-		# Adjust vertical position if we have many rows
-		var num_rows = min(names_per_column, ceil(float(count) / float(num_columns)))
-		if num_rows > 10:
-			# Move the list up a bit to center it better
-			ascended_names_list.position.y = 185 - (num_rows - 10) * 8
+		# Reset vertical position since we're showing columns side by side
+		ascended_names_list.position.y = 185
 	else:
 		ascended_names_list.visible = false
 
