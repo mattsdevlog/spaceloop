@@ -266,7 +266,7 @@ func _request_ascended_list_http():
 	http.request_completed.connect(_on_http_request_completed)
 	
 	# Request the status from HTTP server
-	var error = http.request("http://127.0.0.1:8911/status")
+	var error = http.request("http://35.188.127.102:8911/status")
 	if error != OK:
 		looking_for_server = true
 		_update_looking_text()
@@ -348,7 +348,7 @@ func _connect_to_server():
 	# Connect to game server just to be counted as online
 	if not connected_to_server:
 		var peer = ENetMultiplayerPeer.new()
-		var error = peer.create_client("127.0.0.1", 8910)
+		var error = peer.create_client("35.188.127.102", 8910)
 		
 		if error == OK:
 			get_multiplayer().multiplayer_peer = peer

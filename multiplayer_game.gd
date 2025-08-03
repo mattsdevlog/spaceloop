@@ -63,7 +63,7 @@ func _on_server_disconnected():
 func _return_to_menu():
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "reliable")
 func joined_game(server_game_id: String, color_index: int, player_list: Array):
 	#print("Joined game: ", server_game_id, " as color ", color_index)
 	game_id = server_game_id
@@ -79,13 +79,13 @@ func joined_game(server_game_id: String, color_index: int, player_list: Array):
 	
 	_update_player_count()
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "reliable")
 func player_joined(peer_id: int, color_index: int):
 	#print("Player joined: ", peer_id, " with color ", color_index)
 	_create_player(peer_id, color_index, false)
 	_update_player_count()
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "reliable")
 func player_left(peer_id: int):
 	#print("Player left: ", peer_id)
 	if peer_id in players:
@@ -93,7 +93,7 @@ func player_left(peer_id: int):
 		players.erase(peer_id)
 	_update_player_count()
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "reliable")
 func game_started():
 	#print("Game started!")
 	is_game_started = true
@@ -182,17 +182,18 @@ func _send_player_update(player: Node2D):
 	if is_game_started and is_instance_valid(player):
 		rpc_id(1, "update_player_state", player.position, player.rotation, player.velocity)
 
-@rpc("authority", "call_local", "unreliable")
+@rpc("authority", "unreliable")
 func player_state_updated(peer_id: int, position: Vector2, rotation: float, velocity: Vector2):
 	if peer_id in players and peer_id != my_peer_id:
 		var player = players[peer_id]
 		if player.has_node("NetworkSync"):
 			player.get_node("NetworkSync").update_from_network(position, rotation, velocity)
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "reliable")
 func player_scored_update(peer_id: int, planet_index: int):
 	#print("Player ", peer_id, " scored on planet ", planet_index)
 	# TODO: Update UI with scores
+	pass
 
 func _update_player_count():
 	var count = players.size()
@@ -204,14 +205,14 @@ func _update_player_count():
 		waiting_label.text = "Game starting!"
 
 # Server RPCs (defined here for the client to call)
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "reliable")
 func request_join_game():
 	pass
 
-@rpc("any_peer", "call_remote", "unreliable")
+@rpc("any_peer", "unreliable")
 func update_player_state(position: Vector2, rotation: float, velocity: Vector2):
 	pass
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "reliable")
 func player_scored(planet_index: int):
 	pass

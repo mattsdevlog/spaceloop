@@ -1,0 +1,39 @@
+# Copy and paste these commands one by one in Google Cloud Shell:
+
+# 1. Create the VM instance
+gcloud compute instances create spaceloop-server \
+  --zone=us-central1-a \
+  --machine-type=e2-micro \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=30GB \
+  --tags=game-server
+
+# 2. Create firewall rules
+gcloud compute firewall-rules create spaceloop-game \
+  --allow tcp:8910,tcp:8911 \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=game-server
+
+# 3. SSH into the server
+gcloud compute ssh spaceloop-server --zone=us-central1-a
+
+# 4. Once connected to the server, run these commands:
+sudo apt update
+sudo apt install -y wget unzip
+wget https://downloads.tuxfamily.org/godotengine/4.3/Godot_v4.3-stable_linux.x86_64.zip
+unzip Godot_v4.3-stable_linux.x86_64.zip
+sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+rm Godot_v4.3-stable_linux.x86_64.zip
+
+# 5. Create game directory
+mkdir spaceloop
+exit
+
+# 6. Back in Cloud Shell, upload your files
+cd ~
+git clone https://github.com/mattsdevlog/spaceloop.git
+gcloud compute scp --recurse spaceloop/* spaceloop-server:~/spaceloop/ --zone=us-central1-a
+
+# 7. Get your server IP
+gcloud compute instances describe spaceloop-server --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)'

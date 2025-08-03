@@ -208,11 +208,11 @@ func _process(delta: float) -> void:
 		check_spaceship_collisions()
 		
 		# Handle shooting in battle mode
-		if battle_mode and (is_multiplayer_authority() or not get_multiplayer().has_multiplayer_peer()):
+		if battle_mode and (not get_multiplayer().has_multiplayer_peer() or is_multiplayer_authority()):
 			handle_shooting()
 		
 		# Handle smoke effects for remote players
-		if not is_multiplayer_authority() and get_multiplayer().has_multiplayer_peer():
+		if get_multiplayer().has_multiplayer_peer() and not is_multiplayer_authority():
 			handle_remote_smoke_effects(delta)
 	else:
 		update_shatter(delta)
@@ -246,10 +246,10 @@ func handle_input(delta: float) -> void:
 	
 	var multiplayer = get_multiplayer()
 	var has_peer = multiplayer and multiplayer.has_multiplayer_peer()
-	var is_auth = is_multiplayer_authority()
+	var is_auth = has_peer and is_multiplayer_authority()
 	
 	# In practice mode or when we're the authority, use actual input
-	if is_auth or not has_peer:
+	if not has_peer or is_auth:
 		# Local player or single player - use actual input
 		input_left = Input.is_action_pressed("ui_left")
 		input_right = Input.is_action_pressed("ui_right")
