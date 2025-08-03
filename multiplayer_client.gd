@@ -18,7 +18,7 @@ var game_id: String = ""
 var players = {}  # Dictionary of peer_id -> player node
 var player_names = {}  # Dictionary of peer_id -> player name
 var is_game_started: bool = false
-var combined_score: int = 1  # Combined score countdown
+var combined_score: int = 5  # Combined score countdown
 var is_ascending: bool = false  # Endgame state
 var score_fade_timer: float = 0.0
 var camera_start_y: float = 700.0
@@ -55,17 +55,19 @@ var server_asteroids = {}  # Dictionary of asteroid_id -> asteroid node
 var server_planets = {}  # Dictionary of planet_id -> planet node
 
 func _ready():
-	#print("Multiplayer game starting...")
+	print("Multiplayer game starting...")
+	print("Attempting to connect to server at ", SERVER_IP, ":", SERVER_PORT)
 	
 	# Connect to server
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_client(SERVER_IP, SERVER_PORT)
 	
 	if error != OK:
-		#print("Failed to connect to server: ", error)
+		print("Failed to create client: ", error)
 		_return_to_menu()
 		return
 	
+	print("ENet client created successfully, waiting for connection...")
 	get_multiplayer().multiplayer_peer = peer
 	var multiplayer = get_multiplayer()
 	if multiplayer:
@@ -77,6 +79,9 @@ func _ready():
 	get_multiplayer().connected_to_server.connect(_on_connected_to_server)
 	get_multiplayer().connection_failed.connect(_on_connection_failed)
 	get_multiplayer().server_disconnected.connect(_on_server_disconnected)
+	
+	# Add a connection timeout
+	_start_connection_timeout()
 	
 	# Show waiting UI
 	waiting_label.visible = true
@@ -130,20 +135,47 @@ func _ready():
 		add_child(space_music)
 	
 
+var connection_timeout_timer: Timer = null
+
+func _start_connection_timeout():
+	connection_timeout_timer = Timer.new()
+	connection_timeout_timer.wait_time = 5.0  # 5 seconds timeout
+	connection_timeout_timer.one_shot = true
+	connection_timeout_timer.timeout.connect(_on_connection_timeout)
+	add_child(connection_timeout_timer)
+	connection_timeout_timer.start()
+
+func _on_connection_timeout():
+	print("Connection timeout - failed to connect to server")
+	if get_multiplayer().has_multiplayer_peer():
+		var peer_state = get_multiplayer().multiplayer_peer.get_connection_status()
+		print("Peer connection state: ", peer_state)
+	_return_to_menu()
+
 func _on_connected_to_server():
-	#print("Connected to server! My ID: ", my_peer_id)
+	print("Connected to server! My ID: ", my_peer_id)
+	# Cancel the timeout
+	if connection_timeout_timer:
+		connection_timeout_timer.stop()
+		connection_timeout_timer.queue_free()
+		connection_timeout_timer = null
 	# Request to join a game with player name
 	var player_name = Globals.player_name if Globals.player_name != "" else "Player"
 	# Filter the name before sending to server
 	var filtered_name = ProfanityFilter.filter_text(player_name)
-	rpc_id(1, "request_join_game")
+	rpc_id(1, "request_join_game", my_peer_id, filtered_name)
 
 func _on_connection_failed():
-	#print("Failed to connect to server")
+	print("Connection failed signal received")
+	# Cancel the timeout
+	if connection_timeout_timer:
+		connection_timeout_timer.stop()
+		connection_timeout_timer.queue_free()
+		connection_timeout_timer = null
 	_return_to_menu()
 
 func _on_server_disconnected():
-	#print("Server disconnected")
+	print("Server disconnected")
 	_return_to_menu()
 
 func _return_to_menu():

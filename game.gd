@@ -163,6 +163,8 @@ func _on_name_confirm() -> void:
 	var result = get_tree().change_scene_to_file("res://scenes/multiplayer_game.tscn")
 	if result != OK:
 		print("Failed to change scene! Error code: ", result)
+	else:
+		print("Scene change initiated successfully")
 
 func _input(event: InputEvent) -> void:
 	# Handle ESC to return to menu from practice mode
@@ -307,6 +309,7 @@ func _on_http_request_completed(result: int, response_code: int, headers: Packed
 
 func _update_ascended_display():
 	var count = ascended_list.size()
+	print("Updating ascended display with ", count, " players")
 	if count == 1:
 		ascended_label.text = "[center]1 ASCENDED PLAYER[/center]"
 	else:
@@ -314,17 +317,56 @@ func _update_ascended_display():
 	
 	# Update the names list
 	if count > 0:
-		var names_text = ""
-		for i in range(min(count, 10)):  # Show up to 10 names
-			if i > 0:
-				names_text += "\n"  # Add line break between names
-			names_text += ascended_list[i]
+		# Calculate columns needed (15 names per column)
+		var names_per_column = 15
+		var num_columns = ceil(float(count) / names_per_column)
 		
-		if count > 10:
-			names_text += "\n..."  # Add ellipsis on new line if there are more than 10
+		# Create columns of names
+		var columns = []
+		for col in range(num_columns):
+			columns.append([])
+		
+		# Distribute names into columns
+		for i in range(count):
+			var col_index = i / names_per_column
+			columns[col_index].append(ascended_list[i])
+		
+		# Find the longest name for consistent column width
+		var max_name_length = 0
+		for name in ascended_list:
+			max_name_length = max(max_name_length, name.length())
+		
+		# Build the display text with columns
+		var names_text = ""
+		var column_spacing = "    "  # 4 spaces between columns
+		
+		# Process row by row
+		for row in range(names_per_column):
+			var row_text = ""
+			for col_idx in range(num_columns):
+				if row < columns[col_idx].size():
+					var name = columns[col_idx][row]
+					# Pad name to ensure consistent column width
+					var padded_name = name
+					while padded_name.length() < max_name_length:
+						padded_name += " "
+					row_text += padded_name
+					if col_idx < num_columns - 1:
+						row_text += column_spacing
+			
+			if row_text.strip_edges() != "":  # Only add non-empty rows
+				if names_text != "":
+					names_text += "\n"
+				names_text += row_text.strip_edges()  # Remove trailing spaces
 		
 		ascended_names_list.text = names_text
 		ascended_names_list.visible = true
+		
+		# Adjust vertical position if we have many rows
+		var num_rows = min(names_per_column, ceil(float(count) / float(num_columns)))
+		if num_rows > 10:
+			# Move the list up a bit to center it better
+			ascended_names_list.position.y = 185 - (num_rows - 10) * 8
 	else:
 		ascended_names_list.visible = false
 

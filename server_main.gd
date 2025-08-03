@@ -9,6 +9,22 @@ var games = {}  # Dictionary of game_id -> GameState
 var player_game_map = {}  # Dictionary of player_id -> game_id
 var status_connections = []  # List of peer_ids that are just checking status
 var ascended_players = []  # List of player names who have won
+
+func _init():
+	# Add 50 test names for testing the display
+	var test_names = [
+		"ALICE", "BOB", "CHARLIE", "DAVID", "EVE",
+		"FRANK", "GRACE", "HENRY", "IRIS", "JACK",
+		"KAREN", "LIAM", "MIA", "NOAH", "OLIVIA",
+		"PETER", "QUINN", "ROSE", "SAM", "TARA",
+		"ULYSSES", "VERA", "WALTER", "XENA", "YUKI",
+		"ZARA", "AARON", "BELLA", "CARLOS", "DIANA",
+		"ETHAN", "FIONA", "GEORGE", "HANNAH", "IAN",
+		"JULIA", "KEVIN", "LUNA", "MASON", "NORA",
+		"OSCAR", "PENNY", "QUENTIN", "RUBY", "STEVE",
+		"TINA", "URSULA", "VICTOR", "WENDY", "XAVIER"
+	]
+	ascended_players = test_names
 var all_connected_peers = []  # List of all connected peer IDs
 const ASCENDED_FILE = "user://ascended_players.txt"
 
@@ -21,7 +37,7 @@ class GameState:
 	var asteroids = []  # Array of asteroid data
 	var next_asteroid_id: int = 0
 	var next_planet_id: int = 0
-	var combined_score: int = 1  # Combined score countdown
+	var combined_score: int = 5  # Combined score countdown
 	var is_ascending: bool = false  # Endgame state
 	
 	func _init(game_id: String):
@@ -46,6 +62,8 @@ func _ready():
 	
 	# Create multiplayer peer
 	var peer = ENetMultiplayerPeer.new()
+	# Bind to IPv4 explicitly (0.0.0.0 means all IPv4 interfaces)
+	peer.set_bind_ip("0.0.0.0")
 	var error = peer.create_server(PORT, MAX_PLAYERS * 10)  # Allow multiple games
 	
 	if error != OK:
@@ -228,7 +246,17 @@ func _handle_join_request(sender_id: int, player_name: String = "Player"):
 		game = _create_new_game()
 	
 	# Add player to game
-	var color_index = game.players.size()  # 0, 1, or 2
+	# Find first available color index (0, 1, or 2)
+	var used_indices = []
+	for p in game.players.values():
+		used_indices.append(p.color_index)
+	
+	var color_index = 0
+	for i in range(3):
+		if i not in used_indices:
+			color_index = i
+			break
+	
 	var player = PlayerData.new(sender_id, color_index)
 	player.name = player_name
 	game.players[sender_id] = player

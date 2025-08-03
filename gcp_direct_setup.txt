@@ -11,7 +11,7 @@ gcloud compute instances create spaceloop-server \
 
 # 2. Create firewall rules
 gcloud compute firewall-rules create spaceloop-game \
-  --allow tcp:8910,tcp:8911 \
+  --allow udp:8910,tcp:8911 \
   --source-ranges=0.0.0.0/0 \
   --target-tags=game-server
 
