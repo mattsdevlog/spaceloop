@@ -60,8 +60,19 @@ func _ready():
 	
 	# Connect to server using WebSocket (works for both native and HTML5)
 	var peer = WebSocketMultiplayerPeer.new()
-	var url = "ws://" + SERVER_IP + ":" + str(SERVER_PORT)
+	var url
+	
+	# For HTML5, check if we're on HTTPS
+	if OS.has_feature("web"):
+		print("Running in HTML5/Web environment")
+		# Note: If the game is served over HTTPS, it cannot connect to ws:// (only wss://)
+		# This is a browser security restriction
+	
+	url = "ws://" + SERVER_IP + ":" + str(SERVER_PORT)
+	
+	print("Connecting to WebSocket URL: ", url)
 	var error = peer.create_client(url)
+	print("WebSocket create_client returned: ", error)
 	
 	if error != OK:
 		print("Failed to create client: ", error)
