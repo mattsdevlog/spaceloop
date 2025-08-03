@@ -268,7 +268,8 @@ func _request_ascended_list_http():
 	http.request_completed.connect(_on_http_request_completed)
 	
 	# Request the status from HTTP server
-	var error = http.request("http://35.188.127.102:8911/status")
+	var url = "https://mattsdevlog.com/status" if OS.has_feature("web") else "http://35.188.127.102:8911/status"
+	var error = http.request(url)
 	if error != OK:
 		looking_for_server = true
 		_update_looking_text()
@@ -349,7 +350,7 @@ func _connect_to_server():
 	# Connect to game server just to be counted as online
 	if not connected_to_server:
 		var peer = WebSocketMultiplayerPeer.new()
-		var error = peer.create_client("ws://mattsdevlog.com:8910")
+		var error = peer.create_client("wss://mattsdevlog.com")
 		
 		if error == OK:
 			get_multiplayer().multiplayer_peer = peer

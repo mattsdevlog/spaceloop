@@ -64,11 +64,11 @@ func _ready():
 	# Use the domain name instead of IP for SSL
 	var url
 	if OS.has_feature("web"):
-		# For HTML5 builds on HTTPS, use secure WebSocket
-		url = "wss://mattsdevlog.com:" + str(SERVER_PORT)
+		# For HTML5 builds on HTTPS, use secure WebSocket (nginx handles SSL on 443)
+		url = "wss://mattsdevlog.com"
 	else:
-		# For desktop builds, we can use non-secure for now
-		url = "ws://mattsdevlog.com:" + str(SERVER_PORT)
+		# For desktop builds, use secure WebSocket too
+		url = "wss://mattsdevlog.com"
 	
 	print("Connecting to: ", url)
 	var error = peer.create_client(url)
