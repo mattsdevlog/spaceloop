@@ -1,7 +1,7 @@
 extends Node2D
 
 # Network configuration
-const SERVER_IP = "127.0.0.1"  # Change this to your server IP
+const SERVER_IP = "35.188.127.102"  # Google Cloud server IP
 const SERVER_PORT = 8910
 
 # Player colors - all golden yellow
@@ -136,7 +136,7 @@ func _on_connected_to_server():
 	var player_name = Globals.player_name if Globals.player_name != "" else "Player"
 	# Filter the name before sending to server
 	var filtered_name = ProfanityFilter.filter_text(player_name)
-	rpc_id(1, "request_join_game", my_peer_id, filtered_name)
+	rpc_id(1, "request_join_game")
 
 func _on_connection_failed():
 	#print("Failed to connect to server")

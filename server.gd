@@ -82,7 +82,7 @@ func _remove_player_from_game(player_id: int):
 				if game.players.is_empty():
 					games.erase(game_id)
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "reliable")
 func request_join_game():
 	var sender_id = multiplayer.get_remote_sender_id()
 	#print("Player ", sender_id, " requesting to join game")
@@ -146,7 +146,7 @@ func _start_game(game: GameState):
 	for peer_id in game.players:
 		rpc_id(peer_id, "game_started")
 
-@rpc("any_peer", "call_remote", "unreliable")
+@rpc("any_peer", "unreliable")
 func update_player_state(position: Vector2, rotation: float, velocity: Vector2):
 	var sender_id = multiplayer.get_remote_sender_id()
 	
@@ -165,7 +165,7 @@ func update_player_state(position: Vector2, rotation: float, velocity: Vector2):
 					if peer_id != sender_id:
 						rpc_id(peer_id, "player_state_updated", sender_id, position, rotation, velocity)
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "reliable")
 func player_scored(planet_index: int):
 	var sender_id = multiplayer.get_remote_sender_id()
 	
@@ -178,7 +178,7 @@ func player_scored(planet_index: int):
 			for peer_id in game.players:
 				rpc_id(peer_id, "player_scored_update", sender_id, planet_index)
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "reliable")
 func request_player_count():
 	var sender_id = multiplayer.get_remote_sender_id()
 	
@@ -191,30 +191,30 @@ func request_player_count():
 	rpc_id(sender_id, "receive_player_count", total_players)
 
 # Client RPCs (empty implementations for server)
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func joined_game(game_id: String, color_index: int, player_list: Array):
 	pass
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func player_joined(peer_id: int, color_index: int):
 	pass
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func player_left(peer_id: int):
 	pass
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func game_started():
 	pass
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "unreliable")
 func player_state_updated(peer_id: int, position: Vector2, rotation: float, velocity: Vector2):
 	pass
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func player_scored_update(peer_id: int, planet_index: int):
 	pass
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "reliable")
 func receive_player_count(count: int):
 	pass
