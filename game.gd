@@ -349,7 +349,7 @@ func _connect_to_server():
 	# Connect to game server just to be counted as online
 	if not connected_to_server:
 		var peer = WebSocketMultiplayerPeer.new()
-		var error = peer.create_client("ws://35.188.127.102:8910")
+		var error = peer.create_client("ws://mattsdevlog.com:8910")
 		
 		if error == OK:
 			get_multiplayer().multiplayer_peer = peer

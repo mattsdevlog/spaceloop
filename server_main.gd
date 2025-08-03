@@ -46,13 +46,11 @@ func _ready():
 	#print("Starting dedicated server on port ", PORT)
 	
 	# Create multiplayer peer - Use WebSocket for web compatibility
-	var peer
-	var error
+	var peer = WebSocketMultiplayerPeer.new()
 	
-	# Use WebSocket server to support both native and HTML5 clients
-	peer = WebSocketMultiplayerPeer.new()
-	# WebSocket needs to specify bind address and supported protocols
-	error = peer.create_server(PORT, "*")  # "*" means accept from any origin
+	# For now, create server without SSL (we'll add it after testing)
+	print("Creating WebSocket server on port ", PORT)
+	var error = peer.create_server(PORT, "*")
 	
 	if error != OK:
 		print("Failed to create server on port ", PORT, ": ", error)
@@ -64,8 +62,7 @@ func _ready():
 		return
 		
 	get_multiplayer().multiplayer_peer = peer
-	print("WebSocket server started successfully on port ", PORT)
-	print("Accepting connections from any origin (*)")
+	print("Server started successfully on port ", PORT)
 	
 	# Connect signals
 	get_multiplayer().peer_connected.connect(_on_peer_connected)

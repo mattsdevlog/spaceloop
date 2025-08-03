@@ -58,27 +58,20 @@ func _ready():
 	print("Multiplayer game starting...")
 	print("Attempting to connect to server at ", SERVER_IP, ":", SERVER_PORT)
 	
-	# Connect to server using WebSocket (works for both native and HTML5)
+	# Connect to server using WebSocket
 	var peer = WebSocketMultiplayerPeer.new()
+	
+	# Use the domain name instead of IP for SSL
 	var url
-	
-	# For HTML5, check if we're on HTTPS
 	if OS.has_feature("web"):
-		print("Running in HTML5/Web environment")
-		# Check if we're on HTTPS
-		if JavaScriptBridge.eval("window.location.protocol === 'https:'"):
-			print("ERROR: Game is served over HTTPS but server only supports non-secure WebSocket (ws://)")
-			print("Browsers block non-secure WebSocket connections from secure pages")
-			print("Solution: The server needs SSL certificates for wss:// support")
-			_show_connection_error("Cannot connect to server from secure page. Please use the desktop version.")
-			_return_to_menu()
-			return
+		# For HTML5 builds on HTTPS, use secure WebSocket
+		url = "wss://mattsdevlog.com:" + str(SERVER_PORT)
+	else:
+		# For desktop builds, we can use non-secure for now
+		url = "ws://mattsdevlog.com:" + str(SERVER_PORT)
 	
-	url = "ws://" + SERVER_IP + ":" + str(SERVER_PORT)
-	
-	print("Connecting to WebSocket URL: ", url)
+	print("Connecting to: ", url)
 	var error = peer.create_client(url)
-	print("WebSocket create_client returned: ", error)
 	
 	if error != OK:
 		print("Failed to create client: ", error)
@@ -87,16 +80,17 @@ func _ready():
 	
 	print("ENet client created successfully, waiting for connection...")
 	get_multiplayer().multiplayer_peer = peer
-	var multiplayer = get_multiplayer()
-	if multiplayer:
-		my_peer_id = multiplayer.get_unique_id()
-	else:
-		my_peer_id = -1
 	
-	# Connect multiplayer signals
+	# For WebSocket, we need to wait for the connection to be established
+	print("Waiting for WebSocket connection to establish...")
+	
+	# Connect multiplayer signals BEFORE setting the peer
 	get_multiplayer().connected_to_server.connect(_on_connected_to_server)
 	get_multiplayer().connection_failed.connect(_on_connection_failed)
 	get_multiplayer().server_disconnected.connect(_on_server_disconnected)
+	
+	# Don't set peer_id yet - wait for connected_to_server signal
+	my_peer_id = -1
 	
 	# Add a connection timeout
 	_start_connection_timeout()
@@ -171,12 +165,21 @@ func _on_connection_timeout():
 	_return_to_menu()
 
 func _on_connected_to_server():
+	# Get peer ID after connection is established
+	var multiplayer = get_multiplayer()
+	if multiplayer and multiplayer.has_multiplayer_peer():
+		my_peer_id = multiplayer.get_unique_id()
+	
 	print("Connected to server! My ID: ", my_peer_id)
 	# Cancel the timeout
 	if connection_timeout_timer:
 		connection_timeout_timer.stop()
 		connection_timeout_timer.queue_free()
 		connection_timeout_timer = null
+	
+	# Small delay to ensure WebSocket is fully ready
+	await get_tree().create_timer(0.2).timeout
+	
 	# Request to join a game with player name
 	var player_name = Globals.player_name if Globals.player_name != "" else "Player"
 	# Filter the name before sending to server
