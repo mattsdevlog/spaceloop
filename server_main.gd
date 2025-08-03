@@ -251,8 +251,8 @@ func _handle_join_request(sender_id: int, player_name: String = "Player"):
 	game.players[sender_id] = player
 	player_game_map[sender_id] = game.id
 	
-	# Send game info to the joining player (including player name)
-	rpc_id(sender_id, "joined_game", game.id, color_index, _get_game_player_list(game))
+	# Send game info to the joining player (excluding themselves from the list)
+	rpc_id(sender_id, "joined_game", game.id, color_index, _get_game_player_list(game, sender_id))
 	
 	# If game has started, send current score
 	if game.started:
@@ -286,14 +286,16 @@ func _create_new_game() -> GameState:
 func _generate_game_id() -> String:
 	return "game_" + str(Time.get_ticks_msec())
 
-func _get_game_player_list(game: GameState) -> Array:
+func _get_game_player_list(game: GameState, exclude_peer_id: int = -1) -> Array:
 	var player_list = []
 	for player in game.players.values():
-		player_list.append({
-			"peer_id": player.peer_id,
-			"color_index": player.color_index,
-			"name": player.name
-		})
+		# Don't include the player we're sending this to
+		if player.peer_id != exclude_peer_id:
+			player_list.append({
+				"peer_id": player.peer_id,
+				"color_index": player.color_index,
+				"name": player.name
+			})
 	return player_list
 
 func _start_game(game: GameState):

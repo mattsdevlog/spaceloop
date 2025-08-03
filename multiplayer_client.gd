@@ -65,8 +65,14 @@ func _ready():
 	# For HTML5, check if we're on HTTPS
 	if OS.has_feature("web"):
 		print("Running in HTML5/Web environment")
-		# Note: If the game is served over HTTPS, it cannot connect to ws:// (only wss://)
-		# This is a browser security restriction
+		# Check if we're on HTTPS
+		if JavaScriptBridge.eval("window.location.protocol === 'https:'"):
+			print("ERROR: Game is served over HTTPS but server only supports non-secure WebSocket (ws://)")
+			print("Browsers block non-secure WebSocket connections from secure pages")
+			print("Solution: The server needs SSL certificates for wss:// support")
+			_show_connection_error("Cannot connect to server from secure page. Please use the desktop version.")
+			_return_to_menu()
+			return
 	
 	url = "ws://" + SERVER_IP + ":" + str(SERVER_PORT)
 	
@@ -189,6 +195,14 @@ func _on_connection_failed():
 func _on_server_disconnected():
 	print("Server disconnected")
 	_return_to_menu()
+
+func _show_connection_error(message: String):
+	# Show error message to player
+	if waiting_label:
+		waiting_label.text = message
+		waiting_label.visible = true
+	# Wait a bit before returning to menu
+	await get_tree().create_timer(3.0).timeout
 
 func _return_to_menu():
 	# Stop music before changing scene
@@ -346,7 +360,8 @@ func update_ascending_camera():
 # RPC from server
 @rpc("authority", "reliable")
 func joined_game(server_game_id: String, color_index: int, player_list: Array):
-	#print("Joined game: ", server_game_id, " as color ", color_index)
+	print("Joined game: ", server_game_id, " as color ", color_index, " my_peer_id: ", my_peer_id)
+	print("Player list received: ", player_list)
 	game_id = server_game_id
 	my_color_index = color_index
 	
@@ -358,11 +373,13 @@ func joined_game(server_game_id: String, color_index: int, player_list: Array):
 	player_names[my_peer_id] = Globals.player_name if Globals.player_name != "" else "Player"
 	
 	# Create local player
+	print("Creating local player with peer_id: ", my_peer_id, " color: ", my_color_index)
 	_create_player(my_peer_id, my_color_index, true)
 	
 	# Create other players already in game
 	for player_data in player_list:
 		if player_data.peer_id != my_peer_id:
+			print("Creating other player with peer_id: ", player_data.peer_id, " color: ", player_data.color_index)
 			_create_player(player_data.peer_id, player_data.color_index, false)
 	
 	_update_player_count()
@@ -622,6 +639,11 @@ func update_asteroid(asteroid_id: int, position: Vector2, velocity: Vector2):
 # Removed spaceship_hit and position_corrected - collisions are now handled locally
 
 func _create_player(peer_id: int, color_index: int, is_local: bool) -> Node2D:
+	# Check if player already exists
+	if peer_id in players:
+		print("WARNING: Player ", peer_id, " already exists! Skipping creation.")
+		return players[peer_id]
+	
 	# Load player scene
 	var player_scene = load("res://scenes/player_spaceship.tscn")
 	var player = player_scene.instantiate()
